@@ -212,97 +212,93 @@ export function UraianSubKegiatanTable() {
 
   return (
     <div className="space-y-6">
+      {/* ── KARTU RINGKASAN PER BIDANG ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {bidangList.map(b => {
+          const sisa = b.target - b.realisasi;
+          const pct = b.target > 0 ? Math.round((b.realisasi / b.target) * 100) : 0;
+          const sisaPct = 100 - pct;
+          const isKritis = sisaPct < 15;
+          const isAman = sisaPct >= 40;
+          const isSelected = selectedBidang === b.kode;
 
-      {/* ── KARTU RINGKASAN PER BIDANG (tanpa judul) + Tombol Tambah ── */}
-      <div>
-        {/* Header baris: Filter & tombol */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-          <div className="flex flex-1 items-center gap-3 w-full md:w-auto">
-            {/* Search Input */}
-            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm flex-1 max-w-sm">
-              <Search className="w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Cari kode / uraian..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full text-sm font-medium focus:outline-none bg-transparent" />
-            </div>
+          return (
+            <button
+              key={b.kode}
+              onClick={() => setSelectedBidang(isSelected ? null : b.kode)}
+              className={`text-left bg-white rounded-xl p-4 shadow-sm border transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                isSelected
+                  ? 'border-blue-500 ring-4 ring-blue-500/20 transform scale-[1.02] shadow-md bg-blue-50/10'
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 active:scale-95'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 pr-2 min-w-0">
+                  <div className="text-xs font-medium text-gray-500 mb-1 truncate" title={b.uraian}>{b.uraian}</div>
+                  <div className="text-2xl font-bold text-gray-900 truncate">{formatRp(sisa, true)}</div>
+                </div>
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  isKritis ? 'bg-red-500' : isAman ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}>
+                  {isKritis
+                    ? <AlertCircle className="w-6 h-6 text-white" />
+                    : isAman
+                      ? <CheckCircle2 className="w-6 h-6 text-white" />
+                      : <AlertCircle className="w-6 h-6 text-white" />
+                  }
+                </div>
+              </div>
 
-            {/* Date Filters */}
-            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-              <Filter className="w-4 h-4 text-gray-400 ml-2" />
-              <select value={filterBulan} onChange={e => setFilterBulan(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
-                <option value="semua">Semua Bulan</option>
-                {BULAN_NAMES.map((b, i) => <option key={i} value={i}>{b}</option>)}
-              </select>
-              <div className="w-px h-4 bg-gray-300"></div>
-              <select value={filterTahun} onChange={e => setFilterTahun(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
-                <option value="semua">Semua Tahun</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
+              <div>
+                <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                  <span>Target: <span className="font-medium text-gray-700">{formatRp(b.target, true)}</span></span>
+                  <span className="font-bold text-gray-700">{pct}% Terserap</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      isKritis ? 'bg-red-500' : pct >= 60 ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min(pct, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── BARIS FILTER & TOMBOL ── */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-4 rounded-xl border border-slate-200/60 shadow-sm">
+        <div className="flex flex-1 items-center gap-3 w-full md:w-auto">
+          {/* Search Input */}
+          <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm flex-1 max-w-sm">
+            <Search className="w-4 h-4 text-gray-400" />
+            <input type="text" placeholder="Cari kode / uraian..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full text-sm font-medium focus:outline-none bg-transparent" />
           </div>
 
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-blue-200 flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Tambah Pagu Bidang
-          </button>
+          {/* Date Filters */}
+          <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
+            <Filter className="w-4 h-4 text-gray-400 ml-2" />
+            <select value={filterBulan} onChange={e => setFilterBulan(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
+              <option value="semua">Semua Bulan</option>
+              {BULAN_NAMES.map((b, i) => <option key={i} value={i}>{b}</option>)}
+            </select>
+            <div className="w-px h-4 bg-gray-300"></div>
+            <select value={filterTahun} onChange={e => setFilterTahun(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
+              <option value="semua">Semua Tahun</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
         </div>
 
-        {/* Kartu Summary Bidang */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {bidangList.map(b => {
-            const sisa = b.target - b.realisasi;
-            const pct = b.target > 0 ? Math.round((b.realisasi / b.target) * 100) : 0;
-            const sisaPct = 100 - pct;
-            const isKritis = sisaPct < 15;
-            const isAman = sisaPct >= 40;
-            const isSelected = selectedBidang === b.kode;
-
-            return (
-              <button
-                key={b.kode}
-                onClick={() => setSelectedBidang(isSelected ? null : b.kode)}
-                className={`text-left bg-white rounded-xl p-4 shadow-sm border transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                  isSelected
-                    ? 'border-blue-500 ring-4 ring-blue-500/20 transform scale-[1.02] shadow-md bg-blue-50/10'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 active:scale-95'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 pr-2 min-w-0">
-                    <div className="text-xs font-medium text-gray-500 mb-1 truncate" title={b.uraian}>{b.uraian}</div>
-                    <div className="text-2xl font-bold text-gray-900 truncate">{formatRp(sisa, true)}</div>
-                  </div>
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    isKritis ? 'bg-red-500' : isAman ? 'bg-emerald-500' : 'bg-amber-500'
-                  }`}>
-                    {isKritis
-                      ? <AlertCircle className="w-6 h-6 text-white" />
-                      : isAman
-                        ? <CheckCircle2 className="w-6 h-6 text-white" />
-                        : <AlertCircle className="w-6 h-6 text-white" />
-                    }
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] text-gray-500 mb-1">
-                    <span>Target: <span className="font-medium text-gray-700">{formatRp(b.target, true)}</span></span>
-                    <span className="font-bold text-gray-700">{pct}% Terserap</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5">
-                    <div
-                      className={`h-1.5 rounded-full transition-all duration-500 ${
-                        isKritis ? 'bg-red-500' : pct >= 60 ? 'bg-emerald-500' : 'bg-amber-500'
-                      }`}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-blue-200 flex-shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          Tambah Pagu Bidang
+        </button>
       </div>
 
       {/* ── TABEL DETAIL ── */}
