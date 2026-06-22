@@ -28,7 +28,29 @@ export function AnggaranRealisasi() {
     [currentYear]: PAGU_TOTAL
   });
 
-  const [targetBidangBulan, setTargetBidangBulan] = useState({});
+  const [targetBidangBulan, setTargetBidangBulan] = useState(() => {
+    const defaultTargets = {};
+    const years = [2024, 2025, 2026, 2027, 2028];
+    const bidangData = [
+      { kode: '1', target: 168_376_593_000 },
+      { kode: '2', target: 61_506_114_000 },
+      { kode: '3', target: 231_584_388_000 },
+      { kode: '4', target: 97_960_085_000 }
+    ];
+
+    years.forEach(yr => {
+      defaultTargets[yr] = {};
+      for (let m = 0; m < 12; m++) {
+        defaultTargets[yr][m] = {};
+        bidangData.forEach(b => {
+          const baseMonthly = b.target / 12;
+          const multiplier = 0.8 + (Math.sin(m + 1) * 0.15);
+          defaultTargets[yr][m][b.kode] = Math.round(baseMonthly * multiplier);
+        });
+      }
+    });
+    return defaultTargets;
+  });
 
   const [editingBidangBulan, setEditingBidangBulan] = useState(null);
 
@@ -298,17 +320,17 @@ export function AnggaranRealisasi() {
                       <td className="py-3.5 px-6 text-right tabular-nums text-slate-600 font-medium text-[13px]">
                         {m.target > 0 ? formatRp(m.target, true) : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className={`py-3.5 px-6 text-right tabular-nums font-medium text-[13px] ${m.persentase >= 71 ? 'text-red-500' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                      <td className="py-3.5 px-6 text-right tabular-nums font-semibold text-[13px] text-slate-700">
                         {m.realisasi > 0 ? formatRp(m.realisasi, true) : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3.5 px-4">
                         {hasData ? (
                           <div className="flex flex-col items-center gap-1.5">
                             <div className="w-full max-w-[80px] bg-slate-100 rounded-full h-1.5 mx-auto overflow-hidden">
-                              <div className={`h-full rounded-full transition-all duration-500 ${m.persentase >= 71 ? 'bg-red-500' : m.persentase >= 41 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                              <div className={`h-full rounded-full transition-all duration-500 ${m.persentase >= 75 ? 'bg-emerald-500' : m.persentase >= 40 ? 'bg-amber-400' : 'bg-red-500'}`}
                                 style={{ width: `${Math.min(m.persentase, 100)}%` }} />
                             </div>
-                            <span className={`text-[11px] font-semibold ${m.persentase >= 71 ? 'text-red-500' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                            <span className={`text-[11px] font-semibold ${m.persentase >= 75 ? 'text-emerald-600' : m.persentase >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
                               {m.persentase}%
                             </span>
                           </div>
@@ -334,7 +356,7 @@ export function AnggaranRealisasi() {
                           <td className="py-3 px-6 text-right tabular-nums text-slate-700 font-medium">
                             {t > 0 ? formatRp(t) : <span className="text-slate-300">-</span>}
                           </td>
-                          <td className={`py-3 px-6 text-right tabular-nums font-medium ${pct > 100 ? 'text-red-600' : pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                          <td className={`py-3 px-6 text-right tabular-nums font-medium ${pct >= 75 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : 'text-red-500'}`}>
                             {r > 0 ? formatRp(r) : <span className="text-slate-300">-</span>}
                           </td>
                           <td className="py-3 px-4 text-center">
