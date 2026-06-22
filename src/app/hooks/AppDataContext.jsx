@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { uraianAnggaran } from '../lib/data';
+import { uraianAnggaran, subKegiatanList, sumberDanaList as mockSumberDana } from '../lib/data';
 import { api, sumberDanaApi, userApi, API_URL } from '../lib/api';
 // Key for local storage
 const STORAGE_KEY = 'master_uraian_anggaran_v5';
@@ -103,16 +103,51 @@ export function AppDataProvider({ children }) {
         }
 
       } catch (error) {
-        console.error('Error fetching data:', error);
-        // Fallback ke localStorage jika backend gagal
-        const savedUsers = localStorage.getItem('app_users');
-        if (savedUsers) {
-          try { setAppUsers(JSON.parse(savedUsers)); } catch(e) {}
-        }
-        const savedSumberDana = localStorage.getItem('sumber_dana_v1');
-        if (savedSumberDana) {
-          try { setSumberDanaList(JSON.parse(savedSumberDana)); } catch(e) {}
-        }
+        console.error('Error fetching data, using mock/offline fallback:', error);
+        
+        // Fallback to mock data from data.js
+        setAllDataUraian(uraianAnggaran.map(u => ({
+          kode: u.kode,
+          uraian: u.uraian,
+          level: u.level,
+          target: u.target || 0,
+          realized: u.realisasi || 0,
+          id: `mock-${u.kode}`
+        })));
+
+        setSubKegiatanMeta(subKegiatanList.map(sk => ({
+          id: sk.id,
+          realId: `mock-sk-${sk.id}`,
+          penanggungJawab: sk.penanggungJawab,
+          tanggalMulai: sk.tanggalMulai,
+          tanggalSelesai: sk.tanggalSelesai,
+          deskripsi: sk.deskripsi,
+          steps: sk.steps.map((s, idx) => ({
+            id: s.id || `s-${sk.id}-${idx}`,
+            nama: s.nama,
+            selesai: s.selesai,
+            urutan: idx + 1
+          })),
+          isWadah: sk.isWadah,
+          isApproved: sk.isApproved,
+          sumberDana: sk.sumberDana,
+          anggaranDiminta: sk.anggaranDiminta
+        })));
+
+        setSumberDanaList(mockSumberDana.map((sd, index) => ({
+          id: index + 1,
+          nama: sd,
+          aktif: true
+        })));
+
+        setAppUsers([
+          { id: '1', email: 'admin@dprd.go.id', nama: 'Admin DPRD', role: 'superadmin', aktif: true, bidangKode: 'ALL' },
+          { id: '2', email: 'operator@dprd.go.id', nama: 'Operator Umum', role: 'admin', aktif: true, bidangKode: '2' }
+        ]);
+
+        setAllActivityLogs([
+          { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'Demo Mode', details: 'Sistem berjalan dalam mode offline/demo' }
+        ]);
       } finally {
         setIsLoaded(true);
       }
@@ -133,7 +168,10 @@ export function AppDataProvider({ children }) {
 
   // Realisasi = COMPUTED sum dari realisasi children
   const dataUraian = useMemo(() => {
-    const computed = [...allDataUraian].map(u => ({ ...u })).sort((a, b) => {
+    const computed = [...allDataUraian].map(u => ({
+      ...u,
+      realisasi: u.realisasi || u.realized || 0
+    })).sort((a, b) => {
       const partsA = a.kode.split('.').map(Number);
       const partsB = b.kode.split('.').map(Number);
       for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
