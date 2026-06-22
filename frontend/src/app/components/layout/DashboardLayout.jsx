@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import logoJateng from '../../../imports/logo_jateng.png';
 import {
   LayoutDashboard,
@@ -71,7 +71,12 @@ const menuItems = [
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const userData = localStorage.getItem('user');
+      return userData ? JSON.parse(userData) : null;
+    } catch { return null; }
+  });
   const [notificationCount] = useState(4);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedMenu, setExpandedMenu] = useState(null);
@@ -82,11 +87,9 @@ export function DashboardLayout() {
       if (!userData) {
         navigate('/login');
       } else {
-        setUser(JSON.parse(userData));
+        try { setUser(JSON.parse(userData)); } catch { navigate('/login'); }
       }
     };
-
-    loadUser();
 
     window.addEventListener('user-updated', loadUser);
     return () => window.removeEventListener('user-updated', loadUser);
@@ -131,7 +134,7 @@ export function DashboardLayout() {
 
   const { title: pageTitle, subtitle: pageSubtitle } = getPageTitle();
 
-  if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">

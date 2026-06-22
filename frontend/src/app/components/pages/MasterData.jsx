@@ -18,7 +18,7 @@ function formatRp(n) {
 }
 
 export function MasterData() {
-  const { dataUraian, addUraianBaru, updateUraian, deleteUraian, addActivityLog, sumberDanaList, setSumberDanaList } = useAppData();
+  const { dataUraian, addUraianBaru, updateUraian, deleteUraian, addActivityLog, sumberDanaList, addSumberDana, deleteSumberDana } = useAppData();
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -301,16 +301,15 @@ export function MasterData() {
                   </thead>
                   <tbody>
                     {sumberDanaList.map((sd, idx) => (
-                      <tr key={sd} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={sd.id || sd.nama} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4 text-gray-400">{idx + 1}</td>
-                        <td className="py-3 px-4 font-semibold text-gray-800">{sd}</td>
+                        <td className="py-3 px-4 font-semibold text-gray-800">{sd.nama}</td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-center gap-1.5">
                             <button onClick={() => {
                               if (!isSuperadmin) return alert("Hanya Superadmin yang bisa menghapus.");
-                              if (confirm(`Yakin ingin menghapus sumber dana: ${sd}?`)) {
-                                setSumberDanaList(prev => prev.filter(x => x !== sd));
-                                addActivityLog({ user: user?.nama || 'Unknown', action: 'Hapus Sumber Dana', details: `Menghapus: ${sd}` });
+                              if (confirm(`Yakin ingin menghapus sumber dana: ${sd.nama}?`)) {
+                                deleteSumberDana(sd.id);
                               }
                             }} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
                           </div>
@@ -450,11 +449,14 @@ export function MasterData() {
                   } else if (activeTab === 'sumberDana') {
                     if (!isSuperadmin) return alert('Hanya Superadmin yang bisa menambah Sumber Dana.');
                     if (!formSumberDana.trim()) return;
-                    if (sumberDanaList.includes(formSumberDana.trim())) return alert('Sumber dana ini sudah ada.');
-                    setSumberDanaList(prev => [...prev, formSumberDana.trim()]);
-                    addActivityLog({ user: user?.nama || 'Unknown', action: 'Tambah Sumber Dana', details: `Menambah Sumber Dana Baru: ${formSumberDana.trim()}` });
-                    setFormSumberDana('');
-                    setShowAddModal(false);
+                    if (sumberDanaList.some(s => s.nama.toLowerCase() === formSumberDana.trim().toLowerCase())) return alert('Sumber dana ini sudah ada.');
+                    
+                    addSumberDana(formSumberDana.trim())
+                      .then(() => {
+                        setFormSumberDana('');
+                        setShowAddModal(false);
+                      })
+                      .catch(() => alert('Gagal menambah sumber dana'));
                   }
                 }}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">

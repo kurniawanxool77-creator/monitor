@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { uraianAnggaran } from '../lib/data';
+import { api, sumberDanaApi, userApi } from '../lib/api';
 // Key for local storage
 const STORAGE_KEY = 'master_uraian_anggaran_v5';
 const KEGIATAN_META_KEY = 'kegiatan_metadata_v4';
@@ -14,160 +15,121 @@ export function AppDataProvider({ children }) {
   const [sumberDanaList, setSumberDanaList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize from LocalStorage or Fallback to data.ts
   useEffect(() => {
-    const savedUraian = localStorage.getItem(STORAGE_KEY);
-    if (savedUraian) {
-      try { setAllDataUraian(JSON.parse(savedUraian)); }
-      catch (e) { setAllDataUraian([...uraianAnggaran]); }
-    } else {
-      setAllDataUraian([...uraianAnggaran]);
-    }
-
-    const generateDummyMeta = () => {
-      const defaultMeta = [];
-      const currentYear = new Date().getFullYear();
-      const pjNames = ['Drs. Bambang Setiawan, M.Si', 'Hj. Sri Wahyuni, S.H', 'Ir. Eko Nugroho, M.T', 'Dra. Endah Kusumastuti', 'Ahmad Fauzi, S.E', 'Yuliana Dewi, A.Md'];
-      const sumberDanas = ['APBD Provinsi', 'Dana Alokasi Umum (DAU)', 'Dana Bagi Hasil (DBH)'];
-
-      uraianAnggaran.forEach((u, i) => {
-        if (u.level === 2) {
-          const progressSeed = Math.random();
-          let doneCount = 0;
-          if (progressSeed > 0.7) doneCount = 4;
-          else if (progressSeed > 0.3) doneCount = Math.floor(Math.random() * 3) + 1;
-          
-          const steps = [
-            { id: `s${u.kode}-1`, nama: 'Persiapan Dokumen', selesai: doneCount >= 1 },
-            { id: `s${u.kode}-2`, nama: 'Pelaksanaan', selesai: doneCount >= 2 },
-            { id: `s${u.kode}-3`, nama: 'Evaluasi', selesai: doneCount >= 3 },
-            { id: `s${u.kode}-4`, nama: 'Verifikasi Dokumen', selesai: doneCount >= 4 },
-          ];
-
-          const startMonth = Math.floor(Math.random() * 12);
-          const endMonth = Math.min(11, startMonth + Math.floor(Math.random() * 3));
-          
-          defaultMeta.push({
-            id: u.kode,
-            penanggungJawab: pjNames[i % pjNames.length],
-            tanggalMulai: `${currentYear}-${String(startMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`,
-            tanggalSelesai: `${currentYear}-${String(endMonth + 1).padStart(2, '0')}-28T00:00:00.000Z`,
-            deskripsi: `Pelaksanaan ${u.uraian} sesuai DPA tahun berjalan.`,
-            steps,
-            isWadah: false,
-            isApproved: true,
-            sumberDana: sumberDanas[i % sumberDanas.length],
-            anggaranDiminta: u.target > 0 ? u.target : 10000000
-          });
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          setIsLoaded(true);
+          return;
         }
-      });
-      return defaultMeta;
+
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        const [uraianRes, subKegiatanRes, logsRes, sumberDanaRes, usersRes] = await Promise.all([
+          fetch('/api/v1/kegiatan/uraian', { headers }),
+          fetch('/api/v1/kegiatan/sub-kegiatan', { headers }),
+          fetch('/api/v1/kegiatan/activity-logs', { headers }),
+          fetch('/api/v1/admin/sumber-dana', { headers }),
+          fetch('/api/v1/admin/users', { headers })
+        ]);
+
+        if (uraianRes.ok) {
+          const uraianData = (await uraianRes.json()).data;
+          setAllDataUraian(uraianData.map(u => ({
+            kode: u.kode,
+            uraian: u.nama,
+            level: u.level,
+            target: u.pagu,
+            realized: 0,
+            id: u.id
+          })));
+        }
+
+        if (subKegiatanRes.ok) {
+          const skData = (await subKegiatanRes.json()).data;
+          setSubKegiatanMeta(skData.map(sk => ({
+            id: sk.uraian.kode,
+            realId: sk.id,
+            penanggungJawab: sk.penanggungJawab,
+            tanggalMulai: sk.tanggalMulai,
+            tanggalSelesai: sk.tanggalSelesai,
+            deskripsi: `Pelaksanaan ${sk.nama}`,
+            steps: sk.steps.map(s => ({
+              id: s.id,
+              nama: s.nama,
+              selesai: s.completed,
+              urutan: s.urutan
+            })),
+            isWadah: sk.isWadah,
+            isApproved: sk.status !== 'PERSIAPAN',
+            sumberDana: sk.sumberDana || 'Belum ditentukan',
+            anggaranDiminta: sk.anggaranSubKegiatan
+          })));
+        }
+
+        if (logsRes.ok) {
+          const logsData = (await logsRes.json()).data;
+          setAllActivityLogs(logsData.map(l => ({
+            id: l.id,
+            timestamp: l.createdAt,
+            user: l.user.nama,
+            action: l.action,
+            details: l.details
+          })));
+        }
+
+        // Load SumberDana from backend
+        if (sumberDanaRes.ok) {
+          const sdData = (await sumberDanaRes.json()).data;
+          setSumberDanaList(sdData.map(sd => ({
+            id: sd.id,
+            nama: sd.nama,
+            aktif: sd.aktif
+          })));
+        }
+
+        // Load AppUsers from backend
+        if (usersRes.ok) {
+          const usersData = (await usersRes.json()).data;
+          setAppUsers(usersData.map(u => ({
+            id: u.id,
+            email: u.email,
+            nama: u.nama,
+            role: u.role.toLowerCase(),
+            aktif: u.aktif,
+            bidangKode: u.bidangKode
+          })));
+        }
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback ke localStorage jika backend gagal
+        const savedUsers = localStorage.getItem('app_users');
+        if (savedUsers) {
+          try { setAppUsers(JSON.parse(savedUsers)); } catch(e) {}
+        }
+        const savedSumberDana = localStorage.getItem('sumber_dana_v1');
+        if (savedSumberDana) {
+          try { setSumberDanaList(JSON.parse(savedSumberDana)); } catch(e) {}
+        }
+      } finally {
+        setIsLoaded(true);
+      }
     };
 
-    const savedMeta = localStorage.getItem(KEGIATAN_META_KEY);
-    if (savedMeta) {
-      try {
-        let parsed = JSON.parse(savedMeta);
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-          parsed = generateDummyMeta();
-        } else {
-          parsed = parsed.map((m) => {
-            if (!m.isWadah && m.steps && m.steps.length > 0) {
-              const hasVerifikasi = m.steps.some((s) => s.nama.toLowerCase().includes('verifikasi dokumen'));
-              if (!hasVerifikasi) {
-                m.steps.push({
-                  id: `step-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-                  nama: 'Verifikasi Dokumen',
-                  selesai: false
-                });
-              }
-            }
-            return m;
-          });
-        }
-        setSubKegiatanMeta(parsed);
-      } catch (e) {
-        setSubKegiatanMeta(generateDummyMeta());
-      }
-    } else {
-      setSubKegiatanMeta(generateDummyMeta());
-    }
-
-    const defaultLogs = [
-      { id: '1', timestamp: new Date(Date.now() - 86400000).toISOString(), user: 'Administrator Utama', action: 'Memperbarui Progress', details: 'Memperbarui tahapan Persiapan untuk Dokumen Perencanaan' },
-      { id: '2', timestamp: new Date(Date.now() - 172800000).toISOString(), user: 'Administrator Utama', action: 'Menambahkan Kegiatan', details: 'Kegiatan baru: Evaluasi Kinerja Perangkat Daerah' }
-    ];
-
-    const savedLogs = localStorage.getItem('activity_logs');
-    if (savedLogs) {
-      try { 
-        const parsed = JSON.parse(savedLogs);
-        if (!Array.isArray(parsed) || parsed.length === 0) setAllActivityLogs(defaultLogs);
-        else setAllActivityLogs(parsed);
-      } catch (e) { setAllActivityLogs(defaultLogs); }
-    } else {
-      setAllActivityLogs(defaultLogs);
-    }
-
-    const defaultUsers = [{
-      id: '1',
-      nama: 'Administrator Utama',
-      email: 'admin@dprd.go.id',
-      password: 'admin',
-      role: 'superadmin',
-      bidangKode: 'ALL',
-      status: 'Aktif',
-      lastLogin: new Date().toISOString(),
-    }];
-
-    const savedUsers = localStorage.getItem('app_users');
-    if (savedUsers) {
-      try { 
-        const parsed = JSON.parse(savedUsers);
-        if (!Array.isArray(parsed) || parsed.length === 0) setAppUsers(defaultUsers);
-        else setAppUsers(parsed);
-      } catch (e) { setAppUsers(defaultUsers); }
-    } else {
-      setAppUsers(defaultUsers);
-    }
-
-    const defaultSumberDana = [
-      'APBD Provinsi',
-      'APBD Kabupaten/Kota',
-      'APBN',
-      'Dana Alokasi Khusus (DAK)',
-      'Dana Alokasi Umum (DAU)',
-      'Dana Bagi Hasil (DBH)',
-      'Dana Insentif Daerah (DID)',
-      'Hibah'
-    ];
-    const savedSumberDana = localStorage.getItem('sumber_dana_v1');
-    if (savedSumberDana) {
-      try {
-        const parsed = JSON.parse(savedSumberDana);
-        if (!Array.isArray(parsed) || parsed.length === 0) setSumberDanaList(defaultSumberDana);
-        else setSumberDanaList(parsed);
-      } catch (e) { setSumberDanaList(defaultSumberDana); }
-    } else {
-      setSumberDanaList(defaultSumberDana);
-    }
-
-    setIsLoaded(true);
+    loadData();
   }, []);
 
-  // Save to LocalStorage whenever state changes
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allDataUraian));
-      localStorage.setItem(KEGIATAN_META_KEY, JSON.stringify(subKegiatanMeta));
-      localStorage.setItem('activity_logs', JSON.stringify(allActivityLogs));
-      localStorage.setItem('app_users', JSON.stringify(appUsers));
-      localStorage.setItem('sumber_dana_v1', JSON.stringify(sumberDanaList));
-    }
-  }, [allDataUraian, subKegiatanMeta, allActivityLogs, appUsers, sumberDanaList, isLoaded]);
+  // local storage no longer used for users and sumberdana
 
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  let user = null;
+  try {
+    const userStr = localStorage.getItem('user');
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    localStorage.removeItem('user');
+  }
 
   // Realisasi = COMPUTED sum dari realisasi children
   const dataUraian = useMemo(() => {
@@ -362,11 +324,36 @@ export function AppDataProvider({ children }) {
     }));
   };
 
-  const addUraianBaru = (newUraian) => {
-    setAllDataUraian(prev => {
-      if (prev.some(u => u.kode === newUraian.kode)) return prev;
-      return [...prev, newUraian];
-    });
+  const addUraianBaru = async (newUraian) => {
+    try {
+      const parts = newUraian.kode.split('.');
+      const parentKode = parts.length > 1 ? parts.slice(0, -1).join('.') : null;
+      let parentId = null;
+      if (parentKode) {
+        const parent = allDataUraian.find(u => u.kode === parentKode);
+        if (parent) parentId = parent.id;
+      }
+
+      const res = await api.post('/kegiatan/uraian', {
+        kode: newUraian.kode,
+        nama: newUraian.uraian,
+        level: newUraian.level,
+        pagu: newUraian.target || 0,
+        parentId
+      });
+
+      setAllDataUraian(prev => {
+        if (prev.some(u => u.kode === newUraian.kode)) return prev;
+        return [...prev, { ...newUraian, id: res.id }];
+      });
+    } catch (err) {
+      console.error('Failed to add Uraian', err);
+      // Fallback local update to keep UI working
+      setAllDataUraian(prev => {
+        if (prev.some(u => u.kode === newUraian.kode)) return prev;
+        return [...prev, newUraian];
+      });
+    }
   };
 
   const updateUraian = (kode, updates) => {
@@ -438,7 +425,22 @@ export function AppDataProvider({ children }) {
     setSubKegiatanMeta(prev => prev.filter(m => m.id !== id));
   };
 
-  const addRealisasi = (kode, jumlah) => {
+  const addRealisasi = async (kode, jumlah) => {
+    try {
+      const meta = subKegiatanMeta.find(m => m.id === kode);
+      if (meta && meta.realId) {
+        await api.post('/kegiatan/realisasi', {
+          subKegiatanId: meta.realId,
+          jumlah,
+          bulan: new Date().getMonth() + 1,
+          tahun: new Date().getFullYear(),
+          keterangan: 'Realisasi anggaran frontend'
+        });
+      }
+    } catch (err) {
+      console.error('Failed to add Realisasi', err);
+    }
+
     setAllDataUraian(prev => prev.map(u =>
       u.kode === kode ? { ...u, realized: u.realized + jumlah } : u
     ));
@@ -482,16 +484,60 @@ export function AppDataProvider({ children }) {
     ]);
   };
 
-  const addUser = (newUser) => {
-    setAppUsers(prev => [...prev, newUser]);
+  const addUser = async (newUser) => {
+    try {
+      const res = await api.post('/admin/users', newUser);
+      setAppUsers(prev => [...prev, { ...newUser, id: res.data.id }]);
+      addActivityLog({ user: user?.nama || 'System', action: 'Menambah User', details: `Menambah user baru: ${newUser.email}` });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
-  const updateUser = (id, updatedData) => {
-    setAppUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
+  const updateUser = async (id, updatedData) => {
+    try {
+      await api.patch(`/admin/users/${id}`, updatedData);
+      setAppUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
+      addActivityLog({ user: user?.nama || 'System', action: 'Mengubah User', details: `Mengubah user: ${updatedData.email || id}` });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
-  const deleteUser = (id) => {
-    setAppUsers(prev => prev.filter(u => u.id !== id));
+  const deleteUser = async (id) => {
+    try {
+      await api.delete(`/admin/users/${id}`);
+      setAppUsers(prev => prev.filter(u => u.id !== id));
+      addActivityLog({ user: user?.nama || 'System', action: 'Menghapus User', details: `Menghapus user: ${id}` });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const addSumberDana = async (nama) => {
+    try {
+      const res = await api.post('/admin/sumber-dana', { nama });
+      setSumberDanaList(prev => [...prev, { id: res.data.id, nama: res.data.nama, aktif: true }]);
+      addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana', details: `Menambah sumber dana: ${nama}` });
+      return res.data;
+    } catch (err) {
+      console.error('Failed to add sumber dana:', err);
+      throw err;
+    }
+  };
+
+  const deleteSumberDana = async (id) => {
+    try {
+      await api.delete(`/admin/sumber-dana/${id}`);
+      setSumberDanaList(prev => prev.filter(u => u.id !== id));
+      addActivityLog({ user: user?.nama || 'System', action: 'Menghapus Sumber Dana', details: `Menghapus sumber dana: ${id}` });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
   const value = {
@@ -506,9 +552,9 @@ export function AppDataProvider({ children }) {
     approveSubKegiatan,
     duplicateSubKegiatan,
     addActivityLog, addUser, updateUser, deleteUser,
-    getAppUsers,
     sumberDanaList,
-    setSumberDanaList,
+    addSumberDana,
+    deleteSumberDana,
     user,
   };
 

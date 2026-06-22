@@ -14,13 +14,13 @@ export function RoleAkses() {
     password: '',
     role: 'admin',
     bidangKode: '1',
-    status: 'Aktif',
+    aktif: true,
   });
 
   const bagianList = getBagianList();
 
   const handleOpenAdd = () => {
-    setFormData({ nama: '', email: '', password: '', role: 'admin', bidangKode: '1', status: 'Aktif' });
+    setFormData({ nama: '', email: '', password: '', role: 'admin', bidangKode: '1', aktif: true });
     setEditingId(null);
     setShowAddModal(true);
   };
@@ -29,10 +29,10 @@ export function RoleAkses() {
     setFormData({
       nama: user.nama,
       email: user.email,
-      password: user.password || '',
+      password: '',
       role: user.role,
-      bidangKode: user.bidangKode,
-      status: user.status,
+      bidangKode: user.bidangKode || '1',
+      aktif: user.aktif,
     });
     setEditingId(user.id);
     setShowAddModal(true);
@@ -45,27 +45,25 @@ export function RoleAkses() {
   };
 
   const handleSave = () => {
-    if (!formData.nama || !formData.email || !formData.password) return;
+    if (!formData.nama || !formData.email || (!editingId && !formData.password)) return;
 
     if (editingId) {
       updateUser(editingId, {
         nama: formData.nama,
         email: formData.email,
-        password: formData.password,
+        password: formData.password || undefined,
         role: formData.role,
         bidangKode: formData.role === 'superadmin' ? 'ALL' : formData.bidangKode,
-        status: formData.status,
+        aktif: formData.aktif,
       });
     } else {
       addUser({
-        id: Math.random().toString(36).substring(7),
         nama: formData.nama,
         email: formData.email,
         password: formData.password,
         role: formData.role,
         bidangKode: formData.role === 'superadmin' ? 'ALL' : formData.bidangKode,
-        status: formData.status,
-        lastLogin: '-',
+        aktif: formData.aktif,
       });
     }
     setShowAddModal(false);
@@ -121,12 +119,12 @@ export function RoleAkses() {
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                      {user.status}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.aktif ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      {user.aktif ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-600">
-                    {user.lastLogin === '-' ? '-' : new Date(user.lastLogin).toLocaleString('id-ID')}
+                    {'-'}
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2">
@@ -193,7 +191,7 @@ export function RoleAkses() {
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}
+                <select value={formData.aktif ? 'Aktif' : 'Nonaktif'} onChange={(e) => setFormData({...formData, aktif: e.target.value === 'Aktif'})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="Aktif">Aktif</option>
                   <option value="Nonaktif">Nonaktif</option>
@@ -206,7 +204,7 @@ export function RoleAkses() {
                 Batal
               </button>
               <button onClick={handleSave}
-                disabled={!formData.nama || !formData.email || !formData.password}
+                disabled={!formData.nama || !formData.email || (!editingId && !formData.password)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                 Simpan Data
               </button>

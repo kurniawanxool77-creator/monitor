@@ -454,7 +454,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 onChange={(e) => setForm((f) => ({ ...f, sumberDana: e.target.value }))}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">Pilih Sumber Dana</option>
-                {sumberDanaList.map((s) => <option key={s} value={s}>{s}</option>)}
+                {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
               </select>
             </div>
           </div>

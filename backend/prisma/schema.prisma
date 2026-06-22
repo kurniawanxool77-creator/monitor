@@ -19,6 +19,7 @@ model User {
   nama      String
   role      String   @default("USER") // SUPERADMIN, ADMIN, USER
   aktif     Boolean  @default(true)
+  bidangKode String?  // Kode bidang yang管辖 (null = all/superadmin)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -177,4 +178,16 @@ model ActivityLog {
   subKegiatan   SubKegiatan? @relation(fields: [subKegiatanId], references: [id])
 
   @@map("activity_logs")
+}
+
+// ==================== SUMBER DANA ====================
+
+model SumberDana {
+  id        String   @id @default(uuid())
+  nama      String   @unique
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sumber_dana")
 }

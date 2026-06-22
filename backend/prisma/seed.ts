@@ -9,14 +9,15 @@ async function main() {
   // Create default superadmin
   const superadminPassword = await bcrypt.hash('admin123', 12);
   const superadmin = await prisma.user.upsert({
-    where: { email: 'admin@simpek.com' },
+    where: { email: 'admin@dprd.go.id' },
     update: {},
     create: {
-      email: 'admin@simpek.com',
+      email: 'admin@dprd.go.id',
       password: superadminPassword,
       nama: 'Administrator Sistem',
       role: 'SUPERADMIN',
       aktif: true,
+      bidangKode: null, // Superadmin akses semua bidang
     },
   });
   console.log('✅ Created superadmin:', superadmin.email);
@@ -24,17 +25,34 @@ async function main() {
   // Create default admin
   const adminPassword = await bcrypt.hash('admin123', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'operator@simpek.com' },
+    where: { email: 'operator@dprd.go.id' },
     update: {},
     create: {
-      email: 'operator@simpek.com',
+      email: 'operator@dprd.go.id',
       password: adminPassword,
       nama: 'Operator Sistem',
       role: 'ADMIN',
       aktif: true,
+      bidangKode: null, // Admin akses semua bidang
     },
   });
   console.log('✅ Created admin:', admin.email);
+
+  // Create default user dengan bidangKode
+  const userPassword = await bcrypt.hash('user123', 12);
+  const userBidangSKR = await prisma.user.upsert({
+    where: { email: 'skr@dprd.go.id' },
+    update: {},
+    create: {
+      email: 'skr@dprd.go.id',
+      password: userPassword,
+      nama: 'Staff Sekretariat',
+      role: 'USER',
+      aktif: true,
+      bidangKode: '1', // Hanya akses Sekretariat
+    },
+  });
+  console.log('✅ Created user bidang SKR:', userBidangSKR.email);
 
   // Create default bidang (from original data)
   const bidangData = [
@@ -219,10 +237,31 @@ async function main() {
 
   console.log('✅ Created uraian hierarchy');
 
+  // Create default sumber dana
+  const sumberDanaData = [
+    'APBD Provinsi',
+    'APBD Kabupaten/Kota',
+    'APBN',
+    'Dana Alokasi Khusus (DAK)',
+    'Dana Alokasi Umum (DAU)',
+    'Dana Bagi Hasil (DBH)',
+    'Dana Insentif Daerah (DID)',
+    'Hibah'
+  ];
+
+  for (const nama of sumberDanaData) {
+    await prisma.sumberDana.upsert({
+      where: { nama },
+      update: {},
+      create: { nama },
+    });
+  }
+  console.log('✅ Created sumber dana');
+
   console.log('🎉 Seed completed!');
   console.log('\n📋 Default Credentials:');
-  console.log('   Superadmin: admin@simpek.com / admin123');
-  console.log('   Admin: operator@simpek.com / admin123');
+  console.log('   Superadmin: admin@dprd.go.id / admin123');
+  console.log('   Admin: operator@dprd.go.id / admin123');
 }
 
 main()

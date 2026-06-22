@@ -2,16 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import logoJateng from '../../../imports/logo_jateng.png';
-import { useAppData } from '../../hooks/AppDataContext';
 
 export function Login() {
   const navigate = useNavigate();
-  const { appUsers, updateUser } = useAppData();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validasi kredensial
@@ -20,29 +19,41 @@ export function Login() {
       return;
     }
 
-    const user = appUsers.find(u => u.email === email && u.password === password);
+    try {
+      setLoading(true);
+      setError('');
+      const response = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (user) {
-      if (user.status !== 'Aktif') {
-        setError('Akun Anda dinonaktifkan.');
-        return;
+      const data = await response.json();
+
+      if (response.ok) {
+        const { user, accessToken, refreshToken } = data.data;
+
+        // Simpan session
+        localStorage.setItem('user', JSON.stringify({
+          email: user.email,
+          role: user.role.toLowerCase(),
+          nama: user.nama,
+          id: user.id
+        }));
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+
+        // trigger event to notify layout
+        window.dispatchEvent(new Event('user-updated'));
+        navigate('/');
+      } else {
+        setError(data.message || 'Email atau Password salah.');
       }
-
-      updateUser(user.id, { lastLogin: new Date().toISOString() });
-
-      // Simpan session (mock)
-      localStorage.setItem('user', JSON.stringify({
-        email: user.email,
-        role: user.role,
-        nama: user.nama,
-        bidangKode: user.bidangKode
-      }));
-
-      // trigger event to notify layout
-      window.dispatchEvent(new Event('user-updated'));
-      navigate('/');
-    } else {
-      setError('Email atau Password salah.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Terjadi kesalahan saat menghubungi server. Pastikan backend sudah berjalan.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,16 +124,17 @@ export function Login() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-0.5"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <LogIn className="w-5 h-5" />
-              Masuk Sekarang
+              {loading ? 'Memproses...' : 'Masuk Sekarang'}
             </button>
           </form>
 
           <div className="mt-8 text-center space-y-1">
             <p className="text-xs text-gray-400">
-              Gunakan akun admin@dprd.go.id / admin untuk akses pertama kali.
+              Gunakan <strong>admin@dprd.go.id</strong> / <strong>admin123</strong> untuk akses pertama kali.
             </p>
           </div>
         </div>
