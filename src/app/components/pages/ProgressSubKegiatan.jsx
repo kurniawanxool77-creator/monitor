@@ -197,8 +197,8 @@ export function ProgressSubKegiatan() {
             ? Math.round(cardKegiatans.reduce((acc, k) => acc + k.progress, 0) / cardKegiatans.length)
             : 0;
 
-          const progressColorClass = progressVal >= 71 ? 'text-emerald-600' :
-            progressVal >= 41 ? 'text-amber-500' : 'text-red-600';
+          const progressColorClass = progressVal >= 75 ? 'text-emerald-600' :
+            progressVal >= 40 ? 'text-amber-500' : 'text-red-600';
 
           return (
             <div
@@ -234,8 +234,8 @@ export function ProgressSubKegiatan() {
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      progressVal >= 71 ? 'bg-emerald-500' :
-                      progressVal >= 41 ? 'bg-amber-400' : 'bg-red-500'
+                      progressVal >= 75 ? 'bg-emerald-500' :
+                      progressVal >= 40 ? 'bg-amber-400' : 'bg-red-500'
                     }`}
                     style={{ width: `${progressVal}%` }}
                   />
@@ -290,6 +290,7 @@ export function ProgressSubKegiatan() {
             <thead>
               <tr className="bg-white border-b border-gray-200">
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/3">Kegiatan</th>
+                <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Sumber Dana</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Deadline</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-40">Progress</th>
                 <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Status</th>
@@ -299,7 +300,7 @@ export function ProgressSubKegiatan() {
             <tbody className="divide-y divide-gray-100">
               {paginatedKegiatans.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-16 text-center text-gray-400">
                     <div className="flex flex-col items-center justify-center">
                       <CheckCircle className="w-12 h-12 mb-3 text-gray-300" />
                       <p className="text-sm font-medium">Tidak ada kegiatan di bagian/filter ini</p>
@@ -318,6 +319,11 @@ export function ProgressSubKegiatan() {
                         PJ: <span className="font-semibold text-gray-600">{k.penanggungJawab}</span> • {new Date(k.tanggalMulai).toLocaleDateString('id-ID')} – {new Date(k.tanggalSelesai).toLocaleDateString('id-ID')}
                       </div>
                     </td>
+                    <td className="px-4 py-2.5">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded font-bold border border-blue-100 uppercase tracking-wider whitespace-nowrap">
+                        {k.sumberDana || 'Belum Ditentukan'}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-xs text-gray-600">
                       {new Date(k.tanggalSelesai).toLocaleDateString('id-ID')}
                     </td>
@@ -326,8 +332,8 @@ export function ProgressSubKegiatan() {
                         <div className="w-20 bg-gray-100 rounded-full h-1.5 overflow-hidden flex-shrink-0">
                           <div
                             className={`h-1.5 rounded-full transition-all duration-500 ${
-                              k.progress >= 71 ? 'bg-emerald-500' :
-                              k.progress >= 41 ? 'bg-amber-400' : 'bg-red-500'
+                              k.progress >= 75 ? 'bg-emerald-500' :
+                              k.progress >= 40 ? 'bg-amber-400' : 'bg-red-500'
                             }`}
                             style={{ width: `${k.progress}%` }}
                           />
