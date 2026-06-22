@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import logoJateng from '../../../imports/logo_jateng.png';
+import { API_URL } from '../../lib/api';
 
 export function Login() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export function Login() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

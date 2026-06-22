@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { uraianAnggaran } from '../lib/data';
-import { api, sumberDanaApi, userApi } from '../lib/api';
+import { api, sumberDanaApi, userApi, API_URL } from '../lib/api';
 // Key for local storage
 const STORAGE_KEY = 'master_uraian_anggaran_v5';
 const KEGIATAN_META_KEY = 'kegiatan_metadata_v4';
@@ -27,11 +27,11 @@ export function AppDataProvider({ children }) {
         const headers = { 'Authorization': `Bearer ${token}` };
 
         const [uraianRes, subKegiatanRes, logsRes, sumberDanaRes, usersRes] = await Promise.all([
-          fetch('/api/v1/kegiatan/uraian', { headers }),
-          fetch('/api/v1/kegiatan/sub-kegiatan', { headers }),
-          fetch('/api/v1/kegiatan/activity-logs', { headers }),
-          fetch('/api/v1/admin/sumber-dana', { headers }),
-          fetch('/api/v1/admin/users', { headers })
+          fetch(`${API_URL}/kegiatan/uraian`, { headers }),
+          fetch(`${API_URL}/kegiatan/sub-kegiatan`, { headers }),
+          fetch(`${API_URL}/kegiatan/activity-logs`, { headers }),
+          fetch(`${API_URL}/admin/sumber-dana`, { headers }),
+          fetch(`${API_URL}/admin/users`, { headers })
         ]);
 
         if (uraianRes.ok) {
