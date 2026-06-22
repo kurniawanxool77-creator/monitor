@@ -40,17 +40,20 @@ export function AnggaranRealisasi() {
 
   const paguTotal = globalPagu[selectedYear] || 0;
 
+  // Hitung total realization dari dataUraian (leaf nodes)
+  const leafUraian = dataUraian.filter(u => {
+    const hasChildren = dataUraian.some(child => child.kode.startsWith(u.kode + '.') && child.kode !== u.kode);
+    return !hasChildren && u.level > 1;
+  });
+
+  const totalRealisasiFromUraian = leafUraian.reduce((sum, u) => sum + (u.realisasi || 0), 0);
+
+  const leafSubKegiatans = subKegiatans.filter(k => !k.isWadah);
   const realisasiPerBulan = Array(12).fill(0);
-
-  const realisasiBidangBulan = {};
-  for (let i = 0; i < 12; i++) realisasiBidangBulan[i] = {};
-
-  const leafSubKegiatans = subKegiatans.filter(k =>
-    !subKegiatans.some(child => child.id.startsWith(k.id + '.') && child.id.length > k.id.length)
-  );
+  const realisasiBidangBulan = Array(12).fill(null).map(() => ({}));
 
   leafSubKegiatans.forEach(k => {
-    const realisasi = k.realisasi || 0;
+    const realisasi = k.realized || 0;
     if (realisasi > 0) {
       const startDate = new Date(k.tanggalMulai);
       const endDate = new Date(k.tanggalSelesai);
@@ -72,7 +75,7 @@ export function AnggaranRealisasi() {
     }
   });
 
-  const totalRealisasi = realisasiPerBulan.reduce((sum, v) => sum + v, 0);
+  const totalRealisasi = totalRealisasiFromUraian;
   const totalSisa = paguTotal - totalRealisasi;
   const pctSerapan = paguTotal > 0 ? ((totalRealisasi / paguTotal) * 100).toFixed(1) : '0';
 
@@ -172,14 +175,14 @@ export function AnggaranRealisasi() {
           <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-blue-300 active:scale-95 flex flex-col justify-between">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 pr-2 min-w-0">
-                <div className="text-xs font-bold text-gray-500 mb-1 truncate">{c.title}</div>
-                <div className="text-3xl font-bold text-gray-900 truncate">{c.value}</div>
+                <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 truncate">{c.title}</div>
+                <div className="text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight truncate">{c.value}</div>
               </div>
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${c.color}`}>
-                <c.icon className="w-6 h-6 text-white" />
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${c.color}`}>
+                <c.icon className="w-5 h-5 text-white" />
               </div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">{c.detail}</div>
+            <div className="text-[11px] text-gray-400 font-medium">{c.detail}</div>
           </div>
         ))}
       </div>
@@ -223,7 +226,7 @@ export function AnggaranRealisasi() {
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col">
-          <h2 className="text-sm font-bold text-gray-800 mb-4">Serapan Anggaran</h2>
+          <h2 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-4">Serapan</h2>
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="relative w-36 h-36">
               <ResponsiveContainer width="100%" height="100%">
@@ -234,20 +237,27 @@ export function AnggaranRealisasi() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <div className="text-xl font-black text-gray-900">{pctSerapan}%</div>
-                <div className="text-[10px] text-gray-500">Terserap</div>
+                <div className="text-2xl font-extrabold text-gray-800 tracking-tight">{pctSerapan}%</div>
+                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Terserap</div>
               </div>
             </div>
-            <div className="mt-4 w-full space-y-2">
+            <div className="mt-5 w-full space-y-3">
               {pieData.map((p) => (
-                <div key={p.name} className="flex items-center justify-between text-xs">
+                <div key={p.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                    <span className="text-gray-600">{p.name}</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="text-[13px] text-gray-500 font-medium">{p.name}</span>
                   </div>
-                  <span className="font-semibold text-gray-800">{formatRp(p.value, true)}</span>
+                  <span className="text-[13px] font-semibold text-gray-700">{formatRp(p.value, true)}</span>
                 </div>
               ))}
+              {/* Total Realisasi Row */}
+              <div className="pt-3 mt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-gray-600 font-semibold uppercase tracking-wide">Total Realisasi</span>
+                  <span className="text-[14px] font-bold text-emerald-600">{formatRp(totalRealisasi, true)}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -260,14 +270,14 @@ export function AnggaranRealisasi() {
           <span className="text-xs text-gray-500">Klik baris bulan untuk melihat detail per bidang</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm font-sans">
             <thead className="bg-gray-50 border-b border-slate-200">
               <tr>
-                <th className="text-center py-3 px-4 font-semibold text-slate-500 w-12">No</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-500">Bulan</th>
-                <th className="text-right py-3 px-6 font-semibold text-slate-600 w-48">Target</th>
-                <th className="text-right py-3 px-6 font-semibold text-slate-600 w-48">Realisasi</th>
-                <th className="text-center py-3 px-4 font-semibold text-slate-600 w-36">Capaian</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-12">No</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bulan</th>
+                <th className="text-right py-3 px-6 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-48">Target</th>
+                <th className="text-right py-3 px-6 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-48">Realisasi</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Capaian</th>
               </tr>
             </thead>
             <tbody>
@@ -279,16 +289,16 @@ export function AnggaranRealisasi() {
                   <React.Fragment key={m.bulan}>
                     <tr onClick={() => setExpandedMonth(isExpanded ? null : m.idx)}
                       className={`cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50/50' : 'border-b border-slate-100 hover:bg-slate-50'}`}>
-                      <td className="py-3.5 px-4 text-slate-400 text-center font-medium">{m.idx + 1}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-center font-medium text-[13px]">{m.idx + 1}</td>
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2 font-bold text-slate-800">
+                        <div className="flex items-center gap-2 font-semibold text-slate-700 text-[13px]">
                           {m.bulan}
                         </div>
                       </td>
-                      <td className="py-3.5 px-6 text-right tabular-nums text-slate-700 font-bold">
+                      <td className="py-3.5 px-6 text-right tabular-nums text-slate-600 font-medium text-[13px]">
                         {m.target > 0 ? formatRp(m.target, true) : <span className="text-slate-300">-</span>}
                       </td>
-                      <td className={`py-3.5 px-6 text-right tabular-nums font-bold ${m.persentase >= 71 ? 'text-red-600' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                      <td className={`py-3.5 px-6 text-right tabular-nums font-medium text-[13px] ${m.persentase >= 71 ? 'text-red-500' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
                         {m.realisasi > 0 ? formatRp(m.realisasi, true) : <span className="text-slate-300">-</span>}
                       </td>
                       <td className="py-3.5 px-4">
@@ -298,11 +308,11 @@ export function AnggaranRealisasi() {
                               <div className={`h-full rounded-full transition-all duration-500 ${m.persentase >= 71 ? 'bg-red-500' : m.persentase >= 41 ? 'bg-amber-400' : 'bg-emerald-500'}`}
                                 style={{ width: `${Math.min(m.persentase, 100)}%` }} />
                             </div>
-                            <span className={`text-[11px] font-bold ${m.persentase >= 71 ? 'text-red-600' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                            <span className={`text-[11px] font-semibold ${m.persentase >= 71 ? 'text-red-500' : m.persentase >= 41 ? 'text-amber-500' : 'text-emerald-600'}`}>
                               {m.persentase}%
                             </span>
                           </div>
-                        ) : <span className="text-slate-300 text-xs block text-center">-</span>}
+                        ) : <span className="text-slate-300 text-[11px] block text-center">-</span>}
                       </td>
                     </tr>
 
@@ -340,12 +350,12 @@ export function AnggaranRealisasi() {
                 );
               })}
 
-              <tr className="bg-blue-100 font-bold border-t-2 border-blue-300">
-                <td colSpan={2} className="py-3 px-4 text-blue-900">TOTAL {selectedYear}</td>
-                <td className="py-3 px-4 text-right text-blue-800">{formatRp(currentYearTargets.reduce((a, b) => a + b, 0))}</td>
-                <td className="py-3 px-4 text-right text-emerald-700">{formatRp(totalRealisasi)}</td>
+              <tr className="bg-slate-100 font-semibold border-t-2 border-slate-300">
+                <td colSpan={2} className="py-3 px-4 text-slate-700 text-[13px]">TOTAL {selectedYear}</td>
+                <td className="py-3 px-4 text-right text-slate-700 text-[13px]">{formatRp(currentYearTargets.reduce((a, b) => a + b, 0))}</td>
+                <td className="py-3 px-4 text-right text-slate-700 text-[13px]">{formatRp(totalRealisasi)}</td>
                 <td className="py-3 px-4 text-center">
-                  <span className="text-base font-black text-blue-800">{pctSerapan}%</span>
+                  <span className="text-sm font-bold text-slate-700">{pctSerapan}%</span>
                 </td>
               </tr>
             </tbody>

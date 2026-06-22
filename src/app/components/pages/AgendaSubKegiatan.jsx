@@ -275,15 +275,15 @@ export function AgendaSubKegiatan() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 w-16">No</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 w-48">Bidang</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Kegiatan</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 w-36">Sumber Dana</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 w-32">Target Pagu</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 w-32">Realisasi</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 w-28">Status</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 w-36">Progress</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 w-24">Edit</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-16">No</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-48">Bidang</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kegiatan</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Sumber Dana</th>
+                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Target Pagu</th>
+                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Realisasi</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-28">Status</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Progress</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-24">Edit</th>
               </tr>
             </thead>
             <tbody>
@@ -412,7 +412,7 @@ export function AgendaSubKegiatan() {
                           </>
                         ) : (
                           <>
-                            <td className="py-3 px-4 pl-10 text-xs font-semibold text-gray-500 border-l-[3px] border-transparent group-hover:border-blue-400 transition-colors">
+                            <td className="py-3 px-4 pl-10 text-[13px] font-medium text-gray-500 border-l-[3px] border-transparent group-hover:border-blue-400 transition-colors">
                               {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
                             </td>
                             <td className="py-3 px-4">
@@ -431,7 +431,7 @@ export function AgendaSubKegiatan() {
                             </td>
                           </>
                         )}
-                        <td className="py-3 px-4 text-right text-xs font-bold text-slate-700 whitespace-nowrap">
+                        <td className="py-3 px-4 text-right text-[13px] font-semibold text-slate-700 whitespace-nowrap">
                           {u.target > 0 ? (u.target >= 1_000_000_000 ? `Rp ${(u.target / 1_000_000_000).toFixed(2)}M` : u.target >= 1_000_000 ? `Rp ${(u.target / 1_000_000).toFixed(2)}Jt` : `Rp ${u.target.toLocaleString('id-ID')}`) : '0'}
                         </td>
                         <td className="py-3 px-4 text-right text-xs font-bold text-emerald-600 whitespace-nowrap">
@@ -452,7 +452,7 @@ export function AgendaSubKegiatan() {
                                 progress >= 41 ? 'bg-amber-400' : 'bg-red-500'
                                 }`} style={{ width: `${progress}%` }} />
                             </div>
-                            <span className="text-[11px] font-bold text-gray-700 w-8 text-right">{progress}%</span>
+                            <span className="text-[11px] font-semibold text-gray-600 w-8 text-right">{progress}%</span>
                           </div>
                         </td>
                         <td className="py-3 px-4">

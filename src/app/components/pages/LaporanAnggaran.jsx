@@ -118,14 +118,14 @@ export function LaporanAnggaran() {
             {/* Sample Table */}
             <div className="mb-6">
               <h3 className="font-bold text-gray-900 mb-4">Rincian Per Bidang</h3>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm font-sans">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="text-left py-2 px-3 border">Bidang</th>
-                    <th className="text-right py-2 px-3 border">Pagu</th>
-                    <th className="text-right py-2 px-3 border">Realisasi</th>
-                    <th className="text-right py-2 px-3 border">Sisa</th>
-                    <th className="text-center py-2 px-3 border">%</th>
+                    <th className="text-left py-2 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border">Bidang</th>
+                    <th className="text-right py-2 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border">Pagu</th>
+                    <th className="text-right py-2 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border">Realisasi</th>
+                    <th className="text-right py-2 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border">Sisa</th>
+                    <th className="text-center py-2 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border">%</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -135,25 +135,25 @@ export function LaporanAnggaran() {
                       const pct = b.target > 0 ? Math.round((b.realisasi / b.target) * 100) : 0;
                       return (
                         <tr key={b.kode}>
-                          <td className="py-2 px-3 border">{b.uraian}</td>
-                          <td className="py-2 px-3 border text-right">{formatRp(b.target)}</td>
-                          <td className="py-2 px-3 border text-right">{formatRp(b.realisasi)}</td>
-                          <td className="py-2 px-3 border text-right">{formatRp(sisa)}</td>
-                          <td className="py-2 px-3 border text-center">{pct}%</td>
+                          <td className="py-2.5 px-3 border text-[13px] text-gray-700">{b.uraian}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-slate-700">{formatRp(b.target)}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-slate-700">{formatRp(b.realisasi)}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-slate-700">{formatRp(sisa)}</td>
+                          <td className="py-2.5 px-3 border text-center text-[13px] font-medium text-slate-600">{pct}%</td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-gray-500 border">Tidak ada data bidang.</td>
+                      <td colSpan={5} className="py-4 text-center text-gray-500 border text-sm">Tidak ada data bidang.</td>
                     </tr>
                   )}
-                  <tr className="font-bold bg-gray-50">
-                    <td className="py-2 px-3 border">TOTAL</td>
-                    <td className="py-2 px-3 border text-right">{formatRp(totalPagu)}</td>
-                    <td className="py-2 px-3 border text-right">{formatRp(totalRealisasi)}</td>
-                    <td className="py-2 px-3 border text-right">{formatRp(totalSisa)}</td>
-                    <td className="py-2 px-3 border text-center">{pctSerapan}%</td>
+                  <tr className="font-semibold bg-slate-50 border-t-2 border-slate-200">
+                    <td className="py-2.5 px-3 border text-[13px] text-slate-700">TOTAL</td>
+                    <td className="py-2.5 px-3 border text-right text-[13px] text-slate-700">{formatRp(totalPagu)}</td>
+                    <td className="py-2.5 px-3 border text-right text-[13px] text-slate-700">{formatRp(totalRealisasi)}</td>
+                    <td className="py-2.5 px-3 border text-right text-[13px] text-slate-700">{formatRp(totalSisa)}</td>
+                    <td className="py-2.5 px-3 border text-center text-[13px] text-slate-700">{pctSerapan}%</td>
                   </tr>
                 </tbody>
               </table>
