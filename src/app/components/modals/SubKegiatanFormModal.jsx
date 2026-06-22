@@ -4,7 +4,7 @@ import { useAppData } from '../../hooks/AppDataContext';
 import { anggotaData } from '../../lib/data';
 
 export function SubKegiatanFormModal({ mode, initialData, onClose }) {
-  const { dataUraian, addUraianBaru, updateUraian, updateSubKegiatanMetadata, deleteSubKegiatanMetadata, addActivityLog, user, addRealisasi, subKegiatanMeta, duplicateSubKegiatan, sumberDanaList } = useAppData();
+  const { dataUraian, addUraianBaru, updateUraian, updateSubKegiatanMetadata, deleteSubKegiatanMetadata, addActivityLog, user, addRealisasi, subKegiatanMeta, duplicateSubKegiatan, sumberDanaList, addSumberDana } = useAppData();
 
   const INITIAL_FORM = {
     bidangId: '',
@@ -159,6 +159,17 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
   function cancelNewItem() {
     setNewInputMode(null);
     setNewInputValue('');
+  }
+
+  function saveNewSumberDana() {
+    if (!newInputValue.trim()) return;
+    addSumberDana(newInputValue.trim()).then((newSd) => {
+      setForm((f) => ({ ...f, sumberDana: newSd.nama }));
+      setNewInputMode(null);
+      setNewInputValue('');
+    }).catch(err => {
+      alert("Gagal menyimpan sumber dana");
+    });
   }
 
   function addStepRow() {
@@ -450,12 +461,29 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sumber Dana <span className="text-red-500">*</span></label>
-              <select value={form.sumberDana}
-                onChange={(e) => setForm((f) => ({ ...f, sumberDana: e.target.value }))}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Pilih Sumber Dana</option>
-                {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
-              </select>
+              {newInputMode === 'sumberDana' ? (
+                <div className="flex gap-2">
+                  <input autoFocus type="text" value={newInputValue} onChange={(e) => setNewInputValue(e.target.value)}
+                    placeholder="Sumber dana baru..." className="flex-1 px-3 py-2 border border-blue-400 rounded-lg text-sm" />
+                  <button type="button" onClick={saveNewSumberDana} className="px-3 bg-blue-600 text-white rounded-lg flex items-center justify-center"><Check className="w-4 h-4" /></button>
+                  <button type="button" onClick={cancelNewItem} className="px-3 bg-gray-200 text-gray-600 rounded-lg flex items-center justify-center"><X className="w-4 h-4" /></button>
+                </div>
+              ) : (
+                <select value={form.sumberDana}
+                  onChange={(e) => {
+                    if (e.target.value === 'NEW') {
+                      setNewInputMode('sumberDana');
+                      setNewInputValue('');
+                    } else {
+                      setForm((f) => ({ ...f, sumberDana: e.target.value }));
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option value="">Pilih Sumber Dana</option>
+                  {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
+                  <option value="NEW" className="text-blue-600 font-bold">+ Tambah Baru...</option>
+                </select>
+              )}
             </div>
           </div>
 

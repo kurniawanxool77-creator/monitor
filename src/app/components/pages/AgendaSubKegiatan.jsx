@@ -276,14 +276,12 @@ export function AgendaSubKegiatan() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-16">No</th>
-                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-48">Bidang</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kegiatan</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Sumber Dana</th>
-                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Target Pagu</th>
-                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Realisasi</th>
-                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-28">Status</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Deadline</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Progress</th>
-                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-24">Edit</th>
+                <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-28">Status</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Progres</th>
               </tr>
             </thead>
             <tbody>
@@ -409,19 +407,21 @@ export function AgendaSubKegiatan() {
                             </td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
+                            <td className="py-3 px-4 text-gray-400 text-sm">-</td>
+                            <td className="py-3 px-4 text-gray-400 text-sm">-</td>
+                            <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                           </>
                         ) : (
                           <>
-                            <td className="py-3 px-4 pl-10 text-[13px] font-medium text-gray-500 border-l-[3px] border-transparent group-hover:border-blue-400 transition-colors">
-                              {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
-                            </td>
                             <td className="py-3 px-4">
                               <div className="font-bold text-gray-800 hover:text-blue-600 cursor-pointer transition-colors" onClick={() => setExpandedRow(prev => prev === u.kode ? null : u.kode)}>
                                 {u.uraian}
                               </div>
                               <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
+                                <span className="font-semibold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded w-fit text-[10px] mb-1">
+                                  {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
+                                </span>
                                 <span className="font-semibold text-gray-600">{existingSub?.penanggungJawab || 'Belum ada PJ'}</span>
-                                <span className="font-medium text-gray-500">{safeFormatDate(existingSub?.tanggalMulai)} - {safeFormatDate(existingSub?.tanggalSelesai)}</span>
                               </div>
                             </td>
                             <td className="py-3 px-4">
@@ -429,52 +429,53 @@ export function AgendaSubKegiatan() {
                                 {existingSub?.sumberDana || 'Belum Ditentukan'}
                               </span>
                             </td>
-                          </>
-                        )}
-                        <td className="py-3 px-4 text-right text-[13px] font-semibold text-slate-700 whitespace-nowrap">
-                          {u.target > 0 ? (u.target >= 1_000_000_000 ? `Rp ${(u.target / 1_000_000_000).toFixed(2)}M` : u.target >= 1_000_000 ? `Rp ${(u.target / 1_000_000).toFixed(2)}Jt` : `Rp ${u.target.toLocaleString('id-ID')}`) : '0'}
-                        </td>
-                        <td className="py-3 px-4 text-right text-xs font-bold text-emerald-600 whitespace-nowrap">
-                          {u.target > 0 ? (u.realisasi >= 1_000_000_000 ? `Rp ${(u.realisasi / 1_000_000_000).toFixed(2)}M` : u.realisasi >= 1_000_000 ? `Rp ${(u.realisasi / 1_000_000).toFixed(2)}Jt` : `Rp ${u.realisasi.toLocaleString('id-ID')}`) : '0'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`whitespace-nowrap px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' :
-                            status === 'Berjalan' ? 'bg-blue-100 text-blue-700' :
-                              status === 'Terlambat' ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-600'
-                            }`}>{status}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2 w-full max-w-[120px]">
-                            <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                              <div className={`h-1.5 rounded-full transition-all duration-500 ${
-                                progress >= 71 ? 'bg-emerald-500' :
-                                progress >= 41 ? 'bg-amber-400' : 'bg-red-500'
-                                }`} style={{ width: `${progress}%` }} />
-                            </div>
-                            <span className="text-[11px] font-semibold text-gray-600 w-8 text-right">{progress}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1 justify-center">
-                            {u.level > 1 && (
-                              <>
-                                <button onClick={() => setShowEditModalFor(u.kode)} className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors" title="Edit">
+                            <td className="py-3 px-4 text-[13px] font-semibold text-slate-700 whitespace-nowrap">
+                              {existingSub?.tanggalSelesai ? safeFormatDate(existingSub.tanggalSelesai) : '-'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2 w-full max-w-[120px]">
+                                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                  <div className={`h-1.5 rounded-full transition-all duration-500 ${
+                                    progress >= 75 ? 'bg-emerald-500' :
+                                    progress >= 40 ? 'bg-amber-400' : 'bg-red-500'
+                                    }`} style={{ width: `${progress}%` }} />
+                                </div>
+                                <span className="text-[11px] font-semibold text-gray-600 w-8 text-right">{progress}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`whitespace-nowrap px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' :
+                                status === 'Berjalan' ? 'bg-blue-100 text-blue-700' :
+                                  status === 'Terlambat' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-600'
+                                }`}>{status}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-1.5 justify-center">
+                                {subKegiatan && !isWadah && (
+                                  <button
+                                    onClick={() => openUpdateModal(subKegiatan.id, 'progress')}
+                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+                                  >
+                                    Progres
+                                  </button>
+                                )}
+                                <button onClick={() => setShowEditModalFor(u.kode)} className="p-1 text-amber-600 hover:bg-amber-50 rounded transition-colors" title="Edit">
                                   <Edit className="w-3.5 h-3.5" />
                                 </button>
-                                <button onClick={() => handleDeleteSubKegiatan(u.kode, u.uraian)} className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus">
+                                <button onClick={() => handleDeleteSubKegiatan(u.kode, u.uraian)} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" title="Hapus">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
+                              </div>
+                            </td>
+                          </>
+                        )}
                       </tr>
 
                       {/* Expandable Progress row (only for leaf nodes) */}
                       {isRowExpanded && subKegiatan && (
                         <tr key={`${u.kode}-progress`} className="border-b border-gray-200 bg-blue-50/20">
-                          <td colSpan={9} className="px-12 py-6">
+                          <td colSpan={7} className="px-12 py-6">
                             <div className="flex items-center justify-between mb-5">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-800">

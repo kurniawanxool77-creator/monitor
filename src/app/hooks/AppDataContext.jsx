@@ -562,8 +562,12 @@ export function AppDataProvider({ children }) {
       addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana', details: `Menambah sumber dana: ${nama}` });
       return res.data;
     } catch (err) {
-      console.error('Failed to add sumber dana:', err);
-      throw err;
+      console.warn('Failed to add sumber dana via API, adding to local state (offline mode):', err);
+      const newId = `mock-sd-${Date.now()}`;
+      const newSd = { id: newId, nama, aktif: true };
+      setSumberDanaList(prev => [...prev, newSd]);
+      addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana (Offline)', details: `Menambah sumber dana: ${nama}` });
+      return newSd;
     }
   };
 
