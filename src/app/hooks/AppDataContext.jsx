@@ -14,6 +14,8 @@ export function AppDataProvider({ children }) {
   const [allActivityLogs, setAllActivityLogs] = useState([]);
   const [sumberDanaList, setSumberDanaList] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  // paguSumberDana: { [tahun]: { [sumberDanaId]: jumlahPagu } }
+  const [paguSumberDana, setPaguSumberDana] = useState({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -582,6 +584,23 @@ export function AppDataProvider({ children }) {
     }
   };
 
+  // Helper: set pagu untuk satu sumber dana pada satu tahun
+  const setPaguPerSumberDana = (tahun, sumberDanaId, jumlah) => {
+    setPaguSumberDana(prev => ({
+      ...prev,
+      [tahun]: {
+        ...(prev[tahun] || {}),
+        [sumberDanaId]: jumlah
+      }
+    }));
+  };
+
+  // Helper: ambil pagu total untuk tahun tertentu dari paguSumberDana
+  const getPaguTotalByTahun = (tahun) => {
+    const yearData = paguSumberDana[tahun] || {};
+    return Object.values(yearData).reduce((sum, v) => sum + v, 0);
+  };
+
   const value = {
     isLoaded, dataUraian, allDataUraian, subKegiatanMeta, activityLogs, appUsers,
     getBagianList, getSubKegiatanList, getAgendaHariIni,
@@ -597,6 +616,7 @@ export function AppDataProvider({ children }) {
     sumberDanaList,
     addSumberDana,
     deleteSumberDana,
+    paguSumberDana, setPaguSumberDana, setPaguPerSumberDana, getPaguTotalByTahun,
     user,
   };
 

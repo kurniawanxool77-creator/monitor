@@ -14,7 +14,7 @@ function formatRp(n, short = false) {
 }
 
 export function AnggaranRealisasi() {
-  const { dataUraian, getSubKegiatanList } = useAppData();
+  const { dataUraian, getSubKegiatanList, sumberDanaList, paguSumberDana, setPaguSumberDana } = useAppData();
   const subKegiatans = getSubKegiatanList();
 
   const [showPaguModal, setShowPaguModal] = useState(false);
@@ -23,10 +23,13 @@ export function AnggaranRealisasi() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [expandedMonth, setExpandedMonth] = useState(null);
+  const [filterSumberDana, setFilterSumberDana] = useState('semua');
 
-  const [globalPagu, setGlobalPagu] = useState({
-    [currentYear]: PAGU_TOTAL
-  });
+  // paguInputPerSD: { [sumberDanaId]: string } — untuk modal
+  const [paguInputPerSD, setPaguInputPerSD] = useState({});
+  const [tahunAnggaranInput, setTahunAnggaranInput] = useState(currentYear);
+
+  const [globalPagu, setGlobalPagu] = useState({ [currentYear]: PAGU_TOTAL });
 
   const [targetBidangBulan, setTargetBidangBulan] = useState(() => {
     const defaultTargets = {};
@@ -37,7 +40,6 @@ export function AnggaranRealisasi() {
       { kode: '3', target: 231_584_388_000 },
       { kode: '4', target: 97_960_085_000 }
     ];
-
     years.forEach(yr => {
       defaultTargets[yr] = {};
       for (let m = 0; m < 12; m++) {
@@ -53,24 +55,44 @@ export function AnggaranRealisasi() {
   });
 
   const [editingBidangBulan, setEditingBidangBulan] = useState(null);
-
-  const [paguInput, setPaguInput] = useState('');
-  const [tahunAnggaranInput, setTahunAnggaranInput] = useState(currentYear);
   const [bidangTargetInput, setBidangTargetInput] = useState('');
 
   const bidangList = dataUraian.filter(u => u.level === 1);
 
-  const paguTotal = globalPagu[selectedYear] || 0;
+  // Hitung paguTotal: dari paguSumberDana jika sudah diset, fallback ke globalPagu
+  const sdPaguThisYear = paguSumberDana[selectedYear] || {};
+  const sdPaguTotal = Object.values(sdPaguThisYear).reduce((s, v) => s + v, 0);
+  const paguTotal = sdPaguTotal > 0 ? sdPaguTotal : (globalPagu[selectedYear] || 0);
 
-  // Hitung total realization dari dataUraian (leaf nodes)
-  const leafUraian = dataUraian.filter(u => {
-    const hasChildren = dataUraian.some(child => child.kode.startsWith(u.kode + '.') && child.kode !== u.kode);
-    return !hasChildren && u.level > 1;
+  // Filter subKegiatans by sumberDana
+  const activeSD = sumberDanaList.find(sd => String(sd.id) === filterSumberDana);
+  const leafSubKegiatans = subKegiatans.filter(k => {
+    if (k.isWadah) return false;
+    if (filterSumberDana === 'semua') return true;
+    return k.sumberDana === (activeSD?.nama || '');
   });
 
-  const totalRealisasiFromUraian = leafUraian.reduce((sum, u) => sum + (u.realisasi || 0), 0);
+  // Hitung total realisasi dari dataUraian (leaf nodes), difilter by sumberDana
+  const totalRealisasi = (() => {
+    if (filterSumberDana === 'semua') {
+      const leafUraian = dataUraian.filter(u => {
+        const hasChildren = dataUraian.some(child => child.kode.startsWith(u.kode + '.') && child.kode !== u.kode);
+        return !hasChildren && u.level > 1;
+      });
+      return leafUraian.reduce((sum, u) => sum + (u.realisasi || 0), 0);
+    }
+    return leafSubKegiatans.reduce((sum, k) => sum + (k.realized || 0), 0);
+  })();
 
-  const leafSubKegiatans = subKegiatans.filter(k => !k.isWadah);
+  // Pagu filter: jika SD dipilih, ambil dari paguSumberDana[year][sdId]
+  const paguFiltered = (() => {
+    if (filterSumberDana === 'semua') return paguTotal;
+    return sdPaguThisYear[filterSumberDana] || 0;
+  })();
+
+  const totalSisa = paguFiltered - totalRealisasi;
+  const pctSerapan = paguFiltered > 0 ? ((totalRealisasi / paguFiltered) * 100).toFixed(1) : '0';
+
   const realisasiPerBulan = Array(12).fill(0);
   const realisasiBidangBulan = Array(12).fill(null).map(() => ({}));
 
@@ -79,13 +101,11 @@ export function AnggaranRealisasi() {
     if (realisasi > 0) {
       const startDate = new Date(k.tanggalMulai);
       const endDate = new Date(k.tanggalSelesai);
-
       if (startDate.getFullYear() === selectedYear || endDate.getFullYear() === selectedYear) {
         const startMonth = startDate.getFullYear() < selectedYear ? 0 : startDate.getMonth();
         const endMonth = endDate.getFullYear() > selectedYear ? 11 : endDate.getMonth();
         const totalMonths = Math.max(1, endMonth - startMonth + 1);
         const perMonth = realisasi / totalMonths;
-
         for (let m = startMonth; m <= endMonth && m < 12; m++) {
           realisasiPerBulan[m] += perMonth;
           const bidangObj = bidangList.find(b => b.uraian === k.bidang);
@@ -97,10 +117,6 @@ export function AnggaranRealisasi() {
     }
   });
 
-  const totalRealisasi = totalRealisasiFromUraian;
-  const totalSisa = paguTotal - totalRealisasi;
-  const pctSerapan = paguTotal > 0 ? ((totalRealisasi / paguTotal) * 100).toFixed(1) : '0';
-
   const currentYearTargetBidang = targetBidangBulan[selectedYear] || {};
   const currentYearTargets = Array(12).fill(0).map((_, i) => {
     const bidangTargets = currentYearTargetBidang[i] || {};
@@ -111,16 +127,7 @@ export function AnggaranRealisasi() {
     const target = currentYearTargets[i] || 0;
     const realisasi = realisasiPerBulan[i];
     const pct = target > 0 ? Math.round((realisasi / target) * 100) : 0;
-    const onTrack = pct >= 80;
-
-    return {
-      idx: i,
-      bulan,
-      target,
-      realisasi,
-      persentase: pct,
-      onTrack,
-    };
+    return { idx: i, bulan, target, realisasi, persentase: pct, onTrack: pct >= 80 };
   });
 
   const chartData = BULAN_NAMES.map((bln, i) => ({
@@ -134,18 +141,34 @@ export function AnggaranRealisasi() {
     { name: 'Sisa', value: Math.max(0, totalSisa), color: '#e5e7eb' },
   ];
 
-  function handleSavePagu() {
-    const val = Number(paguInput.replace(/\D/g, ''));
-    if (val >= 0) {
-      setGlobalPagu(prev => ({
-        ...prev,
-        [tahunAnggaranInput]: val
-      }));
-      setSelectedYear(tahunAnggaranInput);
-      setPaguInput('');
-      setShowPaguModal(false);
-    }
+  function handleOpenPaguModal() {
+    const existing = paguSumberDana[selectedYear] || {};
+    const inputs = {};
+    sumberDanaList.filter(sd => sd.aktif).forEach(sd => {
+      inputs[sd.id] = existing[sd.id] ? String(existing[sd.id]) : '';
+    });
+    setPaguInputPerSD(inputs);
+    setTahunAnggaranInput(selectedYear);
+    setShowPaguModal(true);
   }
+
+  function handleSavePagu() {
+    const newPagu = {};
+    let hasAny = false;
+    sumberDanaList.filter(sd => sd.aktif).forEach(sd => {
+      const val = Number((paguInputPerSD[sd.id] || '').replace(/\D/g, ''));
+      if (val > 0) { newPagu[sd.id] = val; hasAny = true; }
+    });
+    if (hasAny) {
+      setPaguSumberDana(prev => ({ ...prev, [tahunAnggaranInput]: newPagu }));
+      setSelectedYear(tahunAnggaranInput);
+    }
+    setShowPaguModal(false);
+  }
+
+  const totalPaguModal = sumberDanaList
+    .filter(sd => sd.aktif)
+    .reduce((sum, sd) => sum + Number((paguInputPerSD[sd.id] || '').replace(/\D/g, '') || 0), 0);
 
   function handleOpenEditBidangBulanModal(monthIdx, monthNama, kode, nama, currentTarget) {
     setEditingBidangBulan({ monthIdx, monthNama, kode, nama, currentTarget });
@@ -156,23 +179,14 @@ export function AnggaranRealisasi() {
   function handleSaveTargetBidang() {
     if (!editingBidangBulan) return;
     const val = Number(bidangTargetInput.replace(/\D/g, '')) || 0;
-
     setTargetBidangBulan(prev => {
       const yearData = prev[selectedYear] || {};
       const monthData = yearData[editingBidangBulan.monthIdx] || {};
-
       return {
         ...prev,
-        [selectedYear]: {
-          ...yearData,
-          [editingBidangBulan.monthIdx]: {
-            ...monthData,
-            [editingBidangBulan.kode]: val
-          }
-        }
+        [selectedYear]: { ...yearData, [editingBidangBulan.monthIdx]: { ...monthData, [editingBidangBulan.kode]: val } }
       };
     });
-
     setShowEditBidangModal(false);
     setEditingBidangBulan(null);
     setBidangTargetInput('');
@@ -189,9 +203,9 @@ export function AnggaranRealisasi() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: "TOTAL PAGU", value: formatRp(paguTotal, true), color: "bg-blue-500", icon: DollarSign, detail: `Tahun Anggaran ${selectedYear}` },
+          { title: "TOTAL PAGU", value: formatRp(paguFiltered, true), color: "bg-blue-500", icon: DollarSign, detail: filterSumberDana === 'semua' ? `Tahun Anggaran ${selectedYear}` : (activeSD?.nama || '') },
           { title: "TOTAL REALISASI", value: formatRp(totalRealisasi, true), color: "bg-emerald-500", icon: TrendingUp, detail: "Terserap" },
-          { title: "SISA ANGGARAN", value: formatRp(totalSisa, true), color: "bg-amber-500", icon: Wallet, detail: "Sisa Pagu" },
+          { title: "SISA ANGGARAN", value: formatRp(Math.max(0, totalSisa), true), color: "bg-amber-500", icon: Wallet, detail: "Sisa Pagu" },
           { title: "PERSENTASE", value: `${pctSerapan}%`, color: "bg-purple-500", icon: PieChartIcon, detail: "Dari Total Pagu" }
         ].map((c, i) => (
           <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-blue-300 active:scale-95 flex flex-col justify-between">
@@ -209,22 +223,28 @@ export function AnggaranRealisasi() {
         ))}
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Tahun Anggaran:</label>
-          <select value={selectedYear} onChange={(e) => {
-            setSelectedYear(Number(e.target.value));
-            setExpandedMonth(null);
-          }}
-            className="px-3.5 py-1.5 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm text-slate-800">
-            {availableYears.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+      {/* Header: Filter Tahun + Sumber Dana + Tombol Set Pagu */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-bold text-slate-700">Tahun:</label>
+            <select value={selectedYear} onChange={(e) => { setSelectedYear(Number(e.target.value)); setExpandedMonth(null); }}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-slate-800">
+              {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-bold text-slate-700">Sumber Dana:</label>
+            <select value={filterSumberDana} onChange={(e) => setFilterSumberDana(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-slate-800">
+              <option value="semua">Semua Sumber Dana</option>
+              {sumberDanaList.filter(sd => sd.aktif).map(sd => (
+                <option key={sd.id} value={String(sd.id)}>{sd.nama}</option>
+              ))}
+            </select>
+          </div>
         </div>
-
-        <button onClick={() => { setPaguInput(String(paguTotal)); setTahunAnggaranInput(selectedYear); setShowPaguModal(true); }}
+        <button onClick={handleOpenPaguModal}
           className="flex items-center gap-2 border border-blue-300 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 text-sm font-semibold transition-colors">
           <DollarSign className="w-4 h-4" /> Set Pagu Anggaran
         </button>
@@ -385,46 +405,58 @@ export function AnggaranRealisasi() {
         </div>
       </div>
 
-      {/* Modal: Set Pagu */}
+      {/* Modal: Set Pagu Per Sumber Dana */}
       {showPaguModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900">Set Pagu Anggaran Global</h2>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Set Pagu Anggaran Per Sumber Dana</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Alokasikan pagu berdasarkan sumber dana aktif</p>
+              </div>
               <button onClick={() => setShowPaguModal(false)} className="p-2 hover:bg-gray-100 rounded-xl text-gray-500"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                Masukkan total pagu anggaran keseluruhan untuk tahun yang dipilih.
-              </div>
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tahun Anggaran</label>
-                <select value={tahunAnggaranInput}
-                  onChange={(e) => setTahunAnggaranInput(Number(e.target.value))}
+                <select value={tahunAnggaranInput} onChange={(e) => setTahunAnggaranInput(Number(e.target.value))}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  {availableYears.map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
+                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Total Pagu Anggaran</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rp</span>
-                  <input type="number" value={paguInput}
-                    onChange={(e) => setPaguInput(e.target.value)}
-                    placeholder="Contoh: 18500000000"
-                    className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                </div>
+              <div className="space-y-3">
+                {sumberDanaList.filter(sd => sd.aktif).length === 0 ? (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    Belum ada sumber dana aktif. Tambahkan dulu di Master Data.
+                  </div>
+                ) : sumberDanaList.filter(sd => sd.aktif).map(sd => (
+                  <div key={sd.id}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{sd.nama}</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
+                      <input type="text" inputMode="numeric"
+                        value={paguInputPerSD[sd.id] ? Number(paguInputPerSD[sd.id]).toLocaleString('id-ID') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setPaguInputPerSD(prev => ({ ...prev, [sd.id]: raw }));
+                        }}
+                        placeholder="0"
+                        className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Total auto-sum */}
+              <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">Total Pagu Keseluruhan</span>
+                <span className="text-base font-bold text-blue-700">{formatRp(totalPaguModal, true)}</span>
               </div>
             </div>
-            <div className="flex gap-3 px-6 pb-6">
+            <div className="flex gap-3 p-6 border-t border-gray-100">
               <button onClick={() => setShowPaguModal(false)}
                 className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50">Batal</button>
               <button onClick={handleSavePagu}
-                disabled={!paguInput || Number(paguInput) < 0}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-40">
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700">
                 <Save className="w-4 h-4" /> Simpan
               </button>
             </div>

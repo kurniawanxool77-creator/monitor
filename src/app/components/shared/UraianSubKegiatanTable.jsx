@@ -13,9 +13,10 @@ function formatRp(n, short = false) {
 }
 
 export function UraianSubKegiatanTable() {
-  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta } = useAppData();
+  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList } = useAppData();
   const [expandedKode, setExpandedKode] = useState(new Set(['1', '2', '3', '4', '5']));
   const [selectedBidang, setSelectedBidang] = useState(null);
+  const [filterSumberDana, setFilterSumberDana] = useState('semua');
 
   const [filterBulan, setFilterBulan] = useState(new Date().getMonth().toString());
   const [filterTahun, setFilterTahun] = useState(new Date().getFullYear().toString());
@@ -137,6 +138,22 @@ export function UraianSubKegiatanTable() {
   const filteredData = uraianAnggaran.filter(u => {
     if (selectedBidang && !(u.kode === selectedBidang || u.kode.startsWith(selectedBidang + '.'))) return false;
     if ((isDateFilterActive || isSearchActive) && !matchedKodes.has(u.kode)) return false;
+    // Filter Sumber Dana: hanya tampilkan node yang memiliki meta dengan sumberDana yang cocok
+    if (filterSumberDana !== 'semua') {
+      const activeSdObj = sumberDanaList.find(sd => String(sd.id) === filterSumberDana);
+      const activeSdNama = activeSdObj?.nama || '';
+      // For leaf nodes: check their metadata
+      const meta = subKegiatanMeta.find(m => m.id === u.kode);
+      if (u.level > 1) {
+        // Only show if this node or one of its descendants matches
+        const hasMatchingDescendant = uraianAnggaran.some(desc => {
+          if (!desc.kode.startsWith(u.kode)) return false;
+          const descMeta = subKegiatanMeta.find(m => m.id === desc.kode);
+          return descMeta?.sumberDana === activeSdNama;
+        });
+        if (!hasMatchingDescendant && meta?.sumberDana !== activeSdNama) return false;
+      }
+    }
     return true;
   });
 
@@ -288,6 +305,13 @@ export function UraianSubKegiatanTable() {
             <select value={filterTahun} onChange={e => setFilterTahun(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
               <option value="semua">Semua Tahun</option>
               {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <div className="w-px h-4 bg-gray-300"></div>
+            <select value={filterSumberDana} onChange={e => setFilterSumberDana(e.target.value)} className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer outline-none">
+              <option value="semua">Semua Sumber Dana</option>
+              {sumberDanaList.filter(sd => sd.aktif).map(sd => (
+                <option key={sd.id} value={String(sd.id)}>{sd.nama}</option>
+              ))}
             </select>
           </div>
         </div>
