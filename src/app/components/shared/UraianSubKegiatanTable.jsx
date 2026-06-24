@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Plus, X, Wallet, Filter, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Plus, X, Wallet, Filter, Search, DollarSign } from 'lucide-react';
 import { useAppData } from '../../hooks/AppDataContext';
 import { PAGU_TOTAL } from '../../lib/data';
 
@@ -12,8 +12,8 @@ function formatRp(n, short = false) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 }
 
-export function UraianSubKegiatanTable() {
-  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList } = useAppData();
+export function UraianSubKegiatanTable({ onOpenPaguModal }) {
+  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList, paguSumberDana } = useAppData();
   const [expandedKode, setExpandedKode] = useState(new Set(['1', '2', '3', '4', '5']));
   const [selectedBidang, setSelectedBidang] = useState(null);
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
@@ -24,6 +24,7 @@ export function UraianSubKegiatanTable() {
 
   const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
+  const currentYear = new Date().getFullYear();
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -31,6 +32,11 @@ export function UraianSubKegiatanTable() {
   const [jumlah, setJumlah] = useState('');
   const [keterangan, setKeterangan] = useState('');
   const [sukses, setSukses] = useState(false);
+
+  // Hitung pagu total dari paguSumberDana jika sudah diset, fallback ke PAGU_TOTAL
+  const sdPaguThisYear = paguSumberDana[currentYear] || {};
+  const sdPaguTotal = Object.values(sdPaguThisYear).reduce((s, v) => s + v, 0);
+  const paguTotalGlobal = sdPaguTotal > 0 ? sdPaguTotal : PAGU_TOTAL;
 
   function toggleExpand(kode) {
     setExpandedKode((prev) => {
@@ -165,7 +171,7 @@ export function UraianSubKegiatanTable() {
   const bidangList = uraianAnggaran.filter(u => u.level === 1);
 
   const totalPaguDialokasikan = bidangList.reduce((acc, b) => acc + b.target, 0);
-  const sisaPaguGlobal = PAGU_TOTAL - totalPaguDialokasikan;
+  const sisaPaguGlobal = paguTotalGlobal - totalPaguDialokasikan;
 
   // Auto-fill form when selectedKode changes
   useEffect(() => {
@@ -323,6 +329,15 @@ export function UraianSubKegiatanTable() {
           <Plus className="w-4 h-4" />
           Tambah Pagu Bidang
         </button>
+        {onOpenPaguModal && (
+          <button
+            onClick={onOpenPaguModal}
+            className="flex items-center gap-2 px-4 py-2.5 border border-blue-300 text-blue-700 hover:bg-blue-50 active:scale-95 text-sm font-semibold rounded-xl transition-all flex-shrink-0"
+          >
+            <DollarSign className="w-4 h-4" />
+            Set Pagu Anggaran
+          </button>
+        )}
       </div>
 
       {/* ── TABEL DETAIL ── */}
@@ -487,7 +502,7 @@ export function UraianSubKegiatanTable() {
                   <div className="flex-1 grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-slate-500 font-medium mb-0.5">Total Pagu Global</div>
-                      <div className="font-bold text-slate-800 text-sm">{formatRp(PAGU_TOTAL, true)}</div>
+                      <div className="font-bold text-slate-800 text-sm">{formatRp(paguTotalGlobal, true)}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 font-medium mb-0.5">Sisa Belum Dialokasikan</div>
