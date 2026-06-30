@@ -217,7 +217,7 @@ export function AgendaSubKegiatan() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
 
         <button
           onClick={() => setShowAddModal(true)}
@@ -279,9 +279,11 @@ export function AgendaSubKegiatan() {
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kegiatan</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Sumber Dana</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Deadline</th>
+                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Target Pagu</th>
+                <th className="text-right py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Realisasi</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-36">Progress</th>
                 <th className="text-left py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-28">Status</th>
-                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Progres</th>
+                <th className="text-center py-3 px-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-32">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -407,6 +409,8 @@ export function AgendaSubKegiatan() {
                             </td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
+                            <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-600 whitespace-nowrap">Rp {u.target ? u.target.toLocaleString('id-ID') : '0'}</td>
+                            <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-600 whitespace-nowrap">Rp {u.realisasi ? u.realisasi.toLocaleString('id-ID') : '0'}</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
@@ -431,6 +435,12 @@ export function AgendaSubKegiatan() {
                             </td>
                             <td className="py-3 px-4 text-[13px] font-semibold text-slate-700 whitespace-nowrap">
                               {existingSub?.tanggalSelesai ? safeFormatDate(existingSub.tanggalSelesai) : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-700 whitespace-nowrap">
+                              Rp {u.target ? u.target.toLocaleString('id-ID') : '0'}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-700 whitespace-nowrap">
+                              Rp {u.realisasi ? u.realisasi.toLocaleString('id-ID') : '0'}
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2 w-full max-w-[120px]">
@@ -475,7 +485,7 @@ export function AgendaSubKegiatan() {
                       {/* Expandable Progress row (only for leaf nodes) */}
                       {isRowExpanded && subKegiatan && (
                         <tr key={`${u.kode}-progress`} className="border-b border-gray-200 bg-blue-50/20">
-                          <td colSpan={7} className="px-12 py-6">
+                          <td colSpan={9} className="px-12 py-6">
                             <div className="flex items-center justify-between mb-5">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-800">

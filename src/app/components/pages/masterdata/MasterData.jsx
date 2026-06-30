@@ -32,19 +32,11 @@ function formatRp(n) {
 }
 
 export function MasterData() {
-  const { dataUraian, addUraianBaru, updateUraian, deleteUraian, addActivityLog, sumberDanaList, addSumberDana, deleteSumberDana } = useAppData();
+  const { dataUraian, addUraianBaru, updateUraian, deleteUraian, addActivityLog, sumberDanaList, addSumberDana, deleteSumberDana, anggotaList, setAnggotaList } = useAppData();
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   const isSuperadmin = user?.role === 'superadmin';
-
-  const ANGGOTA_KEY = 'master_anggota_v1';
-  const [anggotaList, setAnggotaList] = useState(() => {
-    const saved = localStorage.getItem(ANGGOTA_KEY);
-    if (saved) { try { return JSON.parse(saved); } catch { } }
-    return []; // Start empty
-  });
-  useEffect(() => { localStorage.setItem(ANGGOTA_KEY, JSON.stringify(anggotaList)); }, [anggotaList]);
 
   const [editModal, setEditModal] = useState(null);
   const [editNama, setEditNama] = useState('');
@@ -166,7 +158,7 @@ export function MasterData() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         <button onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold">
           <Plus className="w-4 h-4" /> Tambah Data
@@ -176,14 +168,16 @@ export function MasterData() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { title: 'TOTAL BIDANG', value: allBidang.length, detail: 'Kategori utama', detailColor: 'text-blue-600', icon: Database, color: 'bg-blue-500' },
-          { title: 'TOTAL KEGIATAN', value: allKegiatan.length, detail: 'Kategori turunan', detailColor: 'text-purple-600', icon: FolderTree, color: 'bg-purple-500' },
-          { title: 'SUMBER DANA', value: sumberDanaList.length, detail: 'Opsi pendaaan', detailColor: 'text-emerald-600', icon: FileText, color: 'bg-emerald-500' },
-          { title: 'TOTAL ANGGOTA', value: anggotaList.length, detail: 'Personel terdata', detailColor: 'text-amber-600', icon: Users, color: 'bg-amber-500' },
+          { title: 'TOTAL BIDANG', tabKey: 'bidang', value: allBidang.length, detail: 'Kategori utama', detailColor: 'text-blue-600', icon: Database, color: 'bg-blue-500' },
+          { title: 'TOTAL KEGIATAN', tabKey: 'kegiatan', value: allKegiatan.length, detail: 'Kategori turunan', detailColor: 'text-purple-600', icon: FolderTree, color: 'bg-purple-500' },
+          { title: 'SUMBER DANA', tabKey: 'sumberDana', value: sumberDanaList.length, detail: 'Opsi pendaaan', detailColor: 'text-emerald-600', icon: FileText, color: 'bg-emerald-500' },
+          { title: 'TOTAL ANGGOTA', tabKey: 'anggota', value: anggotaList.length, detail: 'Personel terdata', detailColor: 'text-amber-600', icon: Users, color: 'bg-amber-500' },
         ].map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.title} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 cursor-default">
+            <div key={card.title} 
+              onClick={() => setActiveTab(card.tabKey)}
+              className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 cursor-pointer">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="text-xs font-medium text-gray-500 mb-1">{card.title}</div>

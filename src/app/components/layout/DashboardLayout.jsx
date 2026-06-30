@@ -80,6 +80,12 @@ export function DashboardLayout() {
   const [notificationCount] = useState(4);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedMenu, setExpandedMenu] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const loadUser = () => {
@@ -167,7 +173,7 @@ export function DashboardLayout() {
 
             return (
               <div key={idx} className="mb-6">
-                {sidebarOpen && <div className="px-5 text-[10px] font-extrabold text-white/30 tracking-[0.2em] mb-3">{section.section}</div>}
+                {sidebarOpen && <div className="px-5 text-[10px] font-bold text-neutral-400 tracking-[0.15em] mb-2">{section.section}</div>}
                 <div className="space-y-1 px-3">
                   {visibleItems.map((item) => {
                   const Icon = item.icon;
@@ -175,7 +181,6 @@ export function DashboardLayout() {
                   const isActive = location.pathname === item.path;
                   const isChildActive = hasChildren && item.children.some((c) => location.pathname === c.path);
                   const isExpanded = expandedMenu === item.path;
-                  const isHighlighted = isActive || isChildActive;
 
                   return (
                     <div key={item.path}>
@@ -187,21 +192,23 @@ export function DashboardLayout() {
                               setExpandedMenu(isExpanded ? null : item.path);
                             }
                           }}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all flex-1 ${
-                            isHighlighted
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all flex-1 outline-none ${
+                            isActive
                               ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                              : 'text-neutral-300 hover:bg-white/5 hover:text-white'
+                              : isChildActive
+                                ? 'bg-white/10 text-white'
+                                : 'text-neutral-300 hover:bg-white/5 hover:text-white'
                           }`}
                           title={!sidebarOpen ? item.label : undefined}
                         >
-                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <Icon className="w-[18px] h-[18px] flex-shrink-0" />
                           {sidebarOpen && (
                             <>
-                              <span className={`text-sm flex-1 ${isHighlighted ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+                              <span className={`text-[13px] flex-1 ${isActive || isChildActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
                               {hasChildren ? (
-                                <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${isHighlighted ? 'text-white' : 'text-neutral-600'}`} />
+                                <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${isActive || isChildActive ? 'text-white' : 'text-neutral-500'}`} />
                               ) : (
-                                <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isHighlighted ? 'text-white' : 'text-neutral-600'}`} />
+                                <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isActive || isChildActive ? 'text-white' : 'text-neutral-500'}`} />
                               )}
                             </>
                           )}
@@ -210,7 +217,7 @@ export function DashboardLayout() {
 
                       {/* Children */}
                       {hasChildren && isExpanded && sidebarOpen && (
-                        <div className="ml-6 mt-1 space-y-0.5 border-l border-white/10 pl-3">
+                        <div className="ml-6 mt-1 space-y-1 border-l border-white/10 pl-3 py-1">
                           {item.children.map((child) => {
                             const isChildItemActive = location.pathname === child.path;
                             const ChildIcon = child.icon;
@@ -218,13 +225,13 @@ export function DashboardLayout() {
                               <Link
                                 key={child.path}
                                 to={child.path}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] transition-all outline-none ${
                                   isChildItemActive
-                                    ? 'bg-blue-600 text-white font-semibold shadow-md'
-                                    : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-200'
+                                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/40'
+                                    : 'text-neutral-400 hover:bg-white/5 hover:text-white'
                                 }`}
                               >
-                                {ChildIcon && <ChildIcon className="w-4 h-4 flex-shrink-0" />}
+                                {ChildIcon && <ChildIcon className="w-[16px] h-[16px] flex-shrink-0" />}
                                 <span>{child.label}</span>
                               </Link>
                             );
@@ -277,6 +284,15 @@ export function DashboardLayout() {
             </div>
 
             <div className="flex-1 px-8 flex justify-end items-center gap-4">
+              <div className="hidden md:flex flex-col items-end mr-4">
+                <div className="text-sm font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-lg border border-gray-200">
+                  {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} WIB
+                </div>
+                <div className="text-xs text-gray-500 mt-1 font-medium">
+                  {currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
+
               <button className="relative p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
                 <Bell className="w-5 h-5" />
                 {notificationCount > 0 && (

@@ -75,6 +75,11 @@ export function Dashboard() {
     realizationData.push({ name: 'Sisa Anggaran', value: sisa, color: '#e5e7eb' });
   }
 
+  // Fallback for empty data so Recharts doesn't crash
+  const chartRealizationData = realizationData.length > 0
+    ? realizationData
+    : [{ name: 'Belum ada data', value: 1, color: '#f3f4f6' }];
+
   const percentRealisasi = totalPagu > 0 ? ((totalRealisasi / totalPagu) * 100).toFixed(2) : '0';
 
   const jenisCounts = {};
@@ -87,6 +92,10 @@ export function Dashboard() {
      value: jenisCounts[u.uraian] || 0,
      color: BIDANG_COLORS[u.uraian] || getDynamicHexColor(u.uraian)
   }));
+
+  const chartJenisData = jenisData.length > 0
+    ? jenisData
+    : [{ name: 'Belum ada data', value: 1, color: '#f3f4f6' }];
 
   function safeFormatDate(dStr) {
     if (!dStr) return '-';
@@ -344,7 +353,7 @@ export function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={realizationData}
+                    data={chartRealizationData}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -354,7 +363,7 @@ export function Dashboard() {
                     startAngle={90}
                     endAngle={-270}
                   >
-                    {realizationData.map((entry, index) => (
+                    {chartRealizationData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -403,7 +412,7 @@ export function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={jenisData}
+                    data={chartJenisData}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -411,7 +420,7 @@ export function Dashboard() {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {jenisData.map((entry, index) => (
+                    {chartJenisData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>

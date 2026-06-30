@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { uraianAnggaran, subKegiatanList, sumberDanaList as mockSumberDana } from '../lib/data';
+import { uraianAnggaran, subKegiatanList, sumberDanaList as mockSumberDana, anggotaData as mockAnggotaData } from '../lib/data';
+import { generateComplexDummyData } from '../lib/dummyGenerator';
 import { api, sumberDanaApi, userApi, API_URL } from '../lib/api';
 // Key for local storage
 const STORAGE_KEY = 'master_uraian_anggaran_v5';
@@ -19,11 +20,40 @@ export function AppDataProvider({ children }) {
   // paguBidangSumberDana: { [bidangKode]: { [sumberDanaId]: jumlahPagu } }
   const [paguBidangSumberDana, setPaguBidangSumberDana] = useState({});
 
+  const ANGGOTA_KEY = 'master_anggota_v2';
+  const [anggotaList, setAnggotaList] = useState(() => {
+    const saved = localStorage.getItem(ANGGOTA_KEY);
+    if (saved) { try { return JSON.parse(saved); } catch { } }
+    return mockAnggotaData;
+  });
+
   useEffect(() => {
-    // Kosongkan semua data awal sesuai permintaan (mulai dari 0)
-    setAllDataUraian([]);
-    setSubKegiatanMeta([]);
-    setSumberDanaList([]);
+    localStorage.setItem(ANGGOTA_KEY, JSON.stringify(anggotaList));
+  }, [anggotaList]);
+
+  const addAnggotaMaster = (nama, jabatan = 'Anggota', bidang = 'Umum') => {
+    if (!nama.trim()) return;
+    setAnggotaList(prev => {
+      if (prev.some(a => a.nama.toLowerCase() === nama.toLowerCase())) return prev;
+      return [...prev, {
+        id: `ang-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        nama: nama.trim(),
+        jabatan,
+        bidang
+      }];
+    });
+  };
+
+  useEffect(() => {
+    // Generate complex dummy data
+    const dummy = generateComplexDummyData();
+
+    setAllDataUraian(dummy.uraianAnggaran);
+    setSubKegiatanMeta(dummy.subKegiatanMeta);
+    setSumberDanaList(dummy.sumberDanaList);
+    setAnggotaList(dummy.anggotaList);
+    setPaguSumberDana(dummy.paguSumberDana);
+    setPaguBidangSumberDana(dummy.paguBidangSumberDana);
 
     setAppUsers([
       { id: '1', email: 'admin@dprd.go.id', nama: 'Admin DPRD', role: 'superadmin', aktif: true, bidangKode: 'ALL' },
@@ -31,7 +61,7 @@ export function AppDataProvider({ children }) {
     ]);
 
     setAllActivityLogs([
-      { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi berjalan murni dengan data dummy lokal' }
+      { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data dummy tergenerate' }
     ]);
 
     setIsLoaded(true);
@@ -220,8 +250,9 @@ export function AppDataProvider({ children }) {
           tanggalSelesai: meta?.tanggalSelesai || defaultEnd,
           status,
           progress,
-          paguAnggaran: u.target,
-          realized: u.realisasi,
+          paguAnggaran: u.target || 0,
+          realisasiAnggaran: u.realisasi || 0,
+          realized: u.realisasi || 0,
           deskripsi: meta?.deskripsi || `Pelaksanaan kegiatan ${u.uraian}`,
           step,
           steps,
@@ -289,7 +320,7 @@ export function AppDataProvider({ children }) {
     const newUraian = {
       ...node,
       kode: newKode,
-      realized: 0
+      realisasi: 0
     };
 
     setAllDataUraian(prev => [...prev, newUraian]);
@@ -315,7 +346,7 @@ export function AppDataProvider({ children }) {
     setSubKegiatanMeta(prev => prev.filter(m => m.id !== id && !m.id.startsWith(id + '.')));
     setAllDataUraian(prev => prev.map(u => {
       if (u.kode === id || u.kode.startsWith(id + '.')) {
-        return { ...u, target: 0, realized: 0 };
+        return { ...u, target: 0, realisasi: 0 };
       }
       return u;
     }));
@@ -327,13 +358,13 @@ export function AppDataProvider({ children }) {
 
   const addRealisasi = async (kode, jumlah) => {
     setAllDataUraian(prev => prev.map(u =>
-      u.kode === kode ? { ...u, realized: u.realized + jumlah } : u
+      u.kode === kode ? { ...u, realisasi: (u.realisasi || 0) + jumlah } : u
     ));
   };
 
   const setRealisasiToTarget = (kode) => {
     setAllDataUraian(prev => prev.map(u =>
-      u.kode === kode ? { ...u, realized: u.target } : u
+      u.kode === kode ? { ...u, realisasi: u.target } : u
     ));
   };
 
@@ -430,6 +461,9 @@ export function AppDataProvider({ children }) {
     sumberDanaList,
     addSumberDana,
     deleteSumberDana,
+    anggotaList,
+    setAnggotaList,
+    addAnggotaMaster,
     paguSumberDana, setPaguSumberDana, setPaguPerSumberDana, getPaguTotalByTahun,
     paguBidangSumberDana, setPaguBidangSumberDana,
     user,

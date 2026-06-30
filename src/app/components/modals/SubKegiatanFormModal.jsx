@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, Check, Plus, Minus, UserPlus } from 'lucide-react';
 import { useAppData } from '../../hooks/AppDataContext';
-import { anggotaData } from '../../lib/data';
 
 export function SubKegiatanFormModal({ mode, initialData, onClose }) {
-  const { dataUraian, addUraianBaru, updateUraian, updateSubKegiatanMetadata, deleteSubKegiatanMetadata, addActivityLog, user, addRealisasi, subKegiatanMeta, duplicateSubKegiatan, sumberDanaList, addSumberDana } = useAppData();
+  const { dataUraian, addUraianBaru, updateUraian, updateSubKegiatanMetadata, deleteSubKegiatanMetadata, addActivityLog, user, addRealisasi, subKegiatanMeta, duplicateSubKegiatan, sumberDanaList, addSumberDana, paguSumberDana, paguBidangSumberDana, getSubKegiatanList, anggotaList, addAnggotaMaster } = useAppData();
 
   const INITIAL_FORM = {
     bidangId: '',
@@ -21,6 +20,11 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
     anggota: [''],
     isWadah: false,
   };
+
+  const [isAddingMasterPj, setIsAddingMasterPj] = useState(false);
+  const [newPjData, setNewPjData] = useState({ nama: '', jabatan: '' });
+  const [addingMasterIdx, setAddingMasterIdx] = useState(null);
+  const [newAnggotaData, setNewAnggotaData] = useState({ nama: '', jabatan: '' });
 
   const parsedIds = (() => {
     if (mode === 'edit' && initialData) {
@@ -45,13 +49,18 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
         tanggalSelesai: initialData.tanggalSelesai.split('T')[0],
         sumberDana: initialData.sumberDana || '',
         anggaranSubKegiatan: (initialData.paguAnggaran || initialData.anggaranDiminta || '').toString(),
-        realisasi: initialData.realisasi ? initialData.realisasi.toString() : '0',
+        realisasi: (initialData.realisasiAnggaran !== undefined ? initialData.realisasiAnggaran : (initialData.realisasi || 0)).toString(),
         customSteps: (() => {
           const steps = initialData.steps ? initialData.steps.map(s => s.nama) : [];
           if (steps.length === 0 || steps[steps.length - 1] !== 'Verifikasi Dokumen') {
             steps.push('Verifikasi Dokumen');
           }
           return steps;
+        })(),
+        anggota: (() => {
+          const metaEntry = subKegiatanMeta.find(m => m.id === initialData.id);
+          const angg = metaEntry?.anggota || [];
+          return angg.length > 0 ? angg : [''];
         })(),
         isWadah: (() => {
           if (initialData.id.split('.').length === 4) return false;
@@ -76,7 +85,12 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
           tanggalSelesai: initialData.tanggalSelesai.split('T')[0],
           sumberDana: initialData.sumberDana || '',
           anggaranSubKegiatan: (initialData.paguAnggaran || initialData.anggaranDiminta || '').toString(),
-          realisasi: initialData.realisasi ? initialData.realisasi.toString() : '0',
+          realisasi: (initialData.realisasiAnggaran !== undefined ? initialData.realisasiAnggaran : (initialData.realisasi || 0)).toString(),
+          anggota: (() => {
+            const metaEntry = subKegiatanMeta.find(m => m.id === initialData.id);
+            const angg = metaEntry?.anggota || [];
+            return angg.length > 0 ? angg : [''];
+          })(),
           isWadah: (() => {
             if (initialData.id.split('.').length === 4) return false;
             const metaEntry = subKegiatanMeta.find(m => m.id === initialData.id);
@@ -219,13 +233,36 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
   const siblings = dataUraian.filter(u => u.kode.startsWith(parentKodeForPagu + '.') && u.kode.split('.').length === parentKodeForPagu.split('.').length + 1);
   const sumSiblings = siblings.reduce((sum, u) => sum + (u.kode === finalKodeForPagu ? 0 : u.target), 0);
 
-  let currentPagu = parentNode
+  let sisaPaguInduk = parentNode
     ? parentNode.target - sumSiblings
     : (currentNode ? currentNode.target - currentNode.realisasi : 0);
 
+  let currentPagu = sisaPaguInduk;
   let activeLevelLabel = parentKodeForPagu
     ? 'Induk ' + parentKodeForPagu
     : (currentNode ? 'Sisa ' + currentNode.uraian : 'Top Level');
+
+  if (form.sumberDana && form.sumberDana !== 'NEW') {
+    const selectedYear = new Date(form.tanggalMulai).getFullYear();
+    const selectedSdObj = sumberDanaList.find(sd => sd.nama === form.sumberDana);
+    if (selectedSdObj) {
+      const bidangKode = form.bidangId || (finalKodeForPagu ? finalKodeForPagu.split('.')[0] : '');
+      const totalPaguSdBidang = (paguBidangSumberDana[bidangKode] || {})[selectedSdObj.id] || 0;
+      
+      const allSubs = getSubKegiatanList();
+      const allocated = allSubs.reduce((sum, sub) => {
+        if (mode === 'edit' && initialData && sub.id === initialData.id) return sum;
+        const startYear = new Date(sub.tanggalMulai).getFullYear();
+        const subBidangKode = sub.id ? sub.id.split('.')[0] : '';
+        if (subBidangKode === bidangKode && sub.sumberDana === form.sumberDana && startYear === selectedYear) {
+          return sum + (sub.paguAnggaran || 0);
+        }
+        return sum;
+      }, 0);
+      currentPagu = totalPaguSdBidang - allocated;
+      activeLevelLabel = 'Sumber Dana';
+    }
+  }
 
   function handleSave() {
     if (mode === 'add') {
@@ -261,8 +298,8 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
       const targetPagu = Number(form.anggaranSubKegiatan) || 0;
       const realisasiAnggaran = Number(form.realisasi) || 0;
 
-      if (parentNode && targetPagu > currentPagu) {
-        alert("Anggaran Diminta melebihi Sisa Pagu Induk!");
+      if (targetPagu > currentPagu) {
+        alert(`Anggaran Diminta melebihi Sisa Pagu ${activeLevelLabel}!`);
         return;
       }
 
@@ -271,6 +308,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
       updateSubKegiatanMetadata({
         id: finalKode,
         penanggungJawab: form.penanggungJawab || 'Belum ada PJ',
+        anggota: form.anggota.filter(a => a.trim() !== ''),
         tanggalMulai: form.tanggalMulai || new Date().toISOString().split('T')[0],
         tanggalSelesai: form.tanggalSelesai || new Date().toISOString().split('T')[0],
         deskripsi: `Pelaksanaan kegiatan yang bersumber dari ${form.sumberDana}`,
@@ -307,8 +345,8 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
         return;
       }
 
-      if (parentNode && targetPagu > currentPagu) {
-        alert("Anggaran Diminta melebihi Sisa Pagu Induk!");
+      if (targetPagu > currentPagu) {
+        alert(`Anggaran Diminta melebihi Sisa Pagu ${activeLevelLabel}!`);
         return;
       }
 
@@ -376,17 +414,23 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               {newInputMode === 'kegiatan' ? (
                 <div className="flex gap-2">
                   <input autoFocus type="text" value={newInputValue} onChange={(e) => setNewInputValue(e.target.value)}
-                    placeholder="Nama Kegiatan baru..." className="flex-1 px-3 py-2.5 border border-blue-400 rounded-lg" />
-                  <button onClick={saveNewItem} className="px-3 bg-blue-600 text-white rounded-lg"><Check className="w-4 h-4" /></button>
-                  <button onClick={cancelNewItem} className="px-3 bg-gray-200 text-gray-600 rounded-lg"><X className="w-4 h-4" /></button>
+                    placeholder="Nama Kegiatan baru..." className="flex-[2] px-3 py-2.5 border border-blue-400 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                  <button onClick={saveNewItem} className="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Check className="w-4 h-4" /></button>
+                  <button onClick={cancelNewItem} className="px-3 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"><X className="w-4 h-4" /></button>
                 </div>
               ) : (
-                <select value={form.kegiatanId} onChange={(e) => handleSelectChange('kegiatan', e.target.value)} disabled={mode === 'edit' || !form.bidangId}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
-                  <option value="">Pilih Kegiatan</option>
-                  {listKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
-                  <option value="NEW" className="text-blue-600 font-bold">+ Tambah Baru...</option>
-                </select>
+                <div className="flex gap-2">
+                  <select value={form.kegiatanId} onChange={(e) => handleSelectChange('kegiatan', e.target.value)} disabled={mode === 'edit' || !form.bidangId}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
+                    <option value="">Pilih Kegiatan</option>
+                    {listKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
+                  </select>
+                  {mode === 'add' && form.bidangId && (
+                    <button type="button" onClick={() => handleSelectChange('kegiatan', 'NEW')} className="px-3 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
+                      + Baru
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -446,7 +490,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Sisa Anggaran <span className="text-blue-500 text-xs font-normal">({activeLevelLabel})</span>
@@ -456,48 +500,32 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 <input type="text" readOnly
                   value={(parentNode || currentNode) ? currentPagu.toLocaleString('id-ID') : ''}
                   placeholder="Menunggu pilihan hierarki..."
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold cursor-not-allowed text-sm" />
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg bg-blue-50/50 text-blue-800 font-bold cursor-not-allowed text-sm" />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sumber Dana <span className="text-red-500">*</span></label>
-              {newInputMode === 'sumberDana' ? (
-                <div className="flex gap-2">
-                  <input autoFocus type="text" value={newInputValue} onChange={(e) => setNewInputValue(e.target.value)}
-                    placeholder="Sumber dana baru..." className="flex-1 px-3 py-2 border border-blue-400 rounded-lg text-sm" />
-                  <button type="button" onClick={saveNewSumberDana} className="px-3 bg-blue-600 text-white rounded-lg flex items-center justify-center"><Check className="w-4 h-4" /></button>
-                  <button type="button" onClick={cancelNewItem} className="px-3 bg-gray-200 text-gray-600 rounded-lg flex items-center justify-center"><X className="w-4 h-4" /></button>
-                </div>
-              ) : (
-                <select value={form.sumberDana}
-                  onChange={(e) => {
-                    if (e.target.value === 'NEW') {
-                      setNewInputMode('sumberDana');
-                      setNewInputValue('');
-                    } else {
-                      setForm((f) => ({ ...f, sumberDana: e.target.value }));
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option value="">Pilih Sumber Dana</option>
-                  {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
-                  <option value="NEW" className="text-blue-600 font-bold">+ Tambah Baru...</option>
-                </select>
-              )}
+              <select value={form.sumberDana}
+                onChange={(e) => setForm((f) => ({ ...f, sumberDana: e.target.value }))}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                <option value="">Pilih Sumber Dana</option>
+                {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
+              </select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Target Pagu <span className="text-red-500">*</span></label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rp</span>
                 <input type="text" value={form.anggaranSubKegiatan ? Number(form.anggaranSubKegiatan).toLocaleString('id-ID') : ''}
                   onChange={(e) => setForm((f) => ({ ...f, anggaranSubKegiatan: e.target.value.replace(/\D/g, '') }))}
-                  placeholder="Nominal anggaran"
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  placeholder={currentPagu <= 0 ? "Pagu habis" : "Nominal anggaran"}
+                  disabled={currentPagu <= 0}
+                  className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${currentPagu <= 0 ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500' : 'bg-white border-gray-300'}`} />
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Realisasi</label>
               <div className="relative">
@@ -505,18 +533,41 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 <input type="text" value={form.realisasi ? Number(form.realisasi).toLocaleString('id-ID') : ''}
                   onChange={(e) => setForm((f) => ({ ...f, realisasi: e.target.value.replace(/\D/g, '') }))}
                   placeholder="Nominal realisasi"
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
           </div>
 
-          <div>
+          <div className="pt-2 border-t border-gray-100">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nama Penanggung Jawab <span className="text-red-500">*</span></label>
-            <input list="anggota-list" value={form.penanggungJawab} onChange={(e) => setForm(f => ({ ...f, penanggungJawab: e.target.value }))}
-              placeholder="Ketik untuk mencari penanggung jawab..."
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <div className="flex gap-2">
+              {!isAddingMasterPj ? (
+                <>
+                  <input list="anggota-list" value={form.penanggungJawab} onChange={(e) => setForm(f => ({ ...f, penanggungJawab: e.target.value }))}
+                    placeholder="Cari / pilih penanggung jawab..."
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  <button type="button" onClick={() => setIsAddingMasterPj(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
+                    + Baru
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input type="text" value={newPjData.nama} onChange={e => setNewPjData(f => ({...f, nama: e.target.value}))} placeholder="Nama Lengkap..." className="flex-[2] px-4 py-2.5 border border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" autoFocus />
+                  <input type="text" value={newPjData.jabatan} onChange={e => setNewPjData(f => ({...f, jabatan: e.target.value}))} placeholder="Jabatan..." className="flex-1 px-4 py-2.5 border border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <button type="button" onClick={() => {
+                    if(newPjData.nama.trim()) {
+                      addAnggotaMaster(newPjData.nama, newPjData.jabatan || 'Penanggung Jawab', selectedBidang?.uraian || 'Umum');
+                      setForm(f => ({ ...f, penanggungJawab: newPjData.nama }));
+                    }
+                    setIsAddingMasterPj(false);
+                    setNewPjData({nama: '', jabatan: ''});
+                  }} className="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors"><Check className="w-5 h-5"/></button>
+                  <button type="button" onClick={() => setIsAddingMasterPj(false)} className="px-3 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 flex items-center justify-center transition-colors"><X className="w-5 h-5"/></button>
+                </>
+              )}
+            </div>
             <datalist id="anggota-list">
-              {anggotaData.map(a => <option key={a.id} value={a.nama}>{a.nama} - {a.jabatan}</option>)}
+              {anggotaList.map(a => <option key={a.id} value={a.nama}>{a.nama} - {a.jabatan}</option>)}
             </datalist>
           </div>
 
@@ -534,14 +585,38 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                   <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold flex items-center justify-center">
                     {idx + 1}
                   </div>
-                  <input list="anggota-list" type="text" value={anggota} onChange={(e) => updateAnggota(idx, e.target.value)}
-                    placeholder={`Ketik nama anggota ${idx + 1}...`}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                  {form.anggota.length > 1 && (
-                    <button type="button" onClick={() => removeAnggota(idx)}
-                      className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">
-                      <Minus className="w-4 h-4" />
-                    </button>
+                  {addingMasterIdx === idx ? (
+                    <>
+                      <input type="text" value={newAnggotaData.nama} onChange={e => setNewAnggotaData(f => ({...f, nama: e.target.value}))} placeholder="Nama Lengkap..." className="flex-[2] px-3 py-2 border border-blue-400 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" autoFocus />
+                      <input type="text" value={newAnggotaData.jabatan} onChange={e => setNewAnggotaData(f => ({...f, jabatan: e.target.value}))} placeholder="Jabatan..." className="flex-1 px-3 py-2 border border-blue-400 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <button type="button" onClick={() => {
+                        if(newAnggotaData.nama.trim()) {
+                          addAnggotaMaster(newAnggotaData.nama, newAnggotaData.jabatan || 'Anggota', selectedBidang?.uraian || 'Umum');
+                          updateAnggota(idx, newAnggotaData.nama);
+                        }
+                        setAddingMasterIdx(null);
+                        setNewAnggotaData({nama: '', jabatan: ''});
+                      }} className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"><Check className="w-4 h-4"/></button>
+                      <button type="button" onClick={() => setAddingMasterIdx(null)} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"><X className="w-4 h-4"/></button>
+                    </>
+                  ) : (
+                    <>
+                      <input list="anggota-list" type="text" value={anggota} onChange={(e) => updateAnggota(idx, e.target.value)}
+                        placeholder={`Cari / pilih nama anggota ${idx + 1}...`}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <button type="button" onClick={() => {
+                        setAddingMasterIdx(idx);
+                        setNewAnggotaData({ nama: '', jabatan: '' });
+                      }} className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors">
+                        + Baru
+                      </button>
+                      {form.anggota.length > 1 && (
+                        <button type="button" onClick={() => removeAnggota(idx)}
+                          className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors">
+                          <Minus className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

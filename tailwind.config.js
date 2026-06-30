@@ -21,6 +21,9 @@ export default {
           900: '#1e3a8a',
         },
       },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+      },
     },
   },
   plugins: [],

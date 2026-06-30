@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, TrendingUp, PieChart as PieChartIcon, X, Save, AlertCircle, Wallet, Edit2 } from 'lucide-react';
+import { DollarSign, TrendingUp, PieChart as PieChartIcon, X, Save, AlertCircle, Wallet, Edit2, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { PAGU_TOTAL, BULAN_NAMES } from "../../../lib/data";
 import { useAppData } from "../../../hooks/AppDataContext";
@@ -14,7 +14,7 @@ function formatRp(n, short = false) {
 }
 
 export function AnggaranRealisasi() {
-  const { dataUraian, getSubKegiatanList, sumberDanaList, paguSumberDana, setPaguSumberDana } = useAppData();
+  const { dataUraian, getSubKegiatanList, sumberDanaList, paguSumberDana, setPaguSumberDana, addSumberDana } = useAppData();
   const subKegiatans = getSubKegiatanList();
 
   const [showPaguModal, setShowPaguModal] = useState(false);
@@ -25,9 +25,10 @@ export function AnggaranRealisasi() {
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
 
-  // paguInputPerSD: { [sumberDanaId]: string } — untuk modal
   const [paguInputPerSD, setPaguInputPerSD] = useState({});
   const [tahunAnggaranInput, setTahunAnggaranInput] = useState(currentYear);
+  const [newSdMode, setNewSdMode] = useState(false);
+  const [newSdValue, setNewSdValue] = useState('');
 
   const [globalPagu, setGlobalPagu] = useState({});
   const [targetBidangBulan, setTargetBidangBulan] = useState({});
@@ -74,21 +75,33 @@ export function AnggaranRealisasi() {
   const realisasiPerBulan = Array(12).fill(0);
   const realisasiBidangBulan = Array(12).fill(null).map(() => ({}));
 
+  const autoTargetBidangBulan = Array(12).fill(null).map(() => ({}));
+  
   leafSubKegiatans.forEach(k => {
     const realisasi = k.realized || 0;
-    if (realisasi > 0) {
+    const pagu = k.paguAnggaran || k.target || 0;
+
+    if (realisasi > 0 || pagu > 0) {
       const startDate = new Date(k.tanggalMulai);
       const endDate = new Date(k.tanggalSelesai);
       if (startDate.getFullYear() === selectedYear || endDate.getFullYear() === selectedYear) {
         const startMonth = startDate.getFullYear() < selectedYear ? 0 : startDate.getMonth();
         const endMonth = endDate.getFullYear() > selectedYear ? 11 : endDate.getMonth();
         const totalMonths = Math.max(1, endMonth - startMonth + 1);
-        const perMonth = realisasi / totalMonths;
+        const perMonthRealisasi = realisasi / totalMonths;
+        const perMonthPagu = pagu / totalMonths;
+        
         for (let m = startMonth; m <= endMonth && m < 12; m++) {
-          realisasiPerBulan[m] += perMonth;
+          if (realisasi > 0) realisasiPerBulan[m] += perMonthRealisasi;
+          
           const bidangObj = bidangList.find(b => b.uraian === k.bidang);
           if (bidangObj) {
-            realisasiBidangBulan[m][bidangObj.kode] = (realisasiBidangBulan[m][bidangObj.kode] || 0) + perMonth;
+            if (realisasi > 0) {
+              realisasiBidangBulan[m][bidangObj.kode] = (realisasiBidangBulan[m][bidangObj.kode] || 0) + perMonthRealisasi;
+            }
+            if (pagu > 0) {
+              autoTargetBidangBulan[m][bidangObj.kode] = (autoTargetBidangBulan[m][bidangObj.kode] || 0) + perMonthPagu;
+            }
           }
         }
       }
@@ -97,8 +110,14 @@ export function AnggaranRealisasi() {
 
   const currentYearTargetBidang = targetBidangBulan[selectedYear] || {};
   const currentYearTargets = Array(12).fill(0).map((_, i) => {
-    const bidangTargets = currentYearTargetBidang[i] || {};
-    return Object.values(bidangTargets).reduce((sum, val) => sum + val, 0);
+    const manualTargets = currentYearTargetBidang[i] || {};
+    const autoTargets = autoTargetBidangBulan[i];
+    let sum = 0;
+    bidangList.forEach(b => {
+      if (manualTargets[b.kode] !== undefined) sum += manualTargets[b.kode];
+      else sum += (autoTargets[b.kode] || 0);
+    });
+    return sum;
   });
 
   const monthly = BULAN_NAMES.map((bulan, i) => {
@@ -118,6 +137,10 @@ export function AnggaranRealisasi() {
     { name: 'Terserap', value: totalRealisasi, color: '#10b981' },
     { name: 'Sisa', value: Math.max(0, totalSisa), color: '#e5e7eb' },
   ];
+
+  const chartPieData = (totalRealisasi === 0 && Math.max(0, totalSisa) === 0)
+    ? [{ name: 'Belum ada pagu', value: 1, color: '#f3f4f6' }]
+    : pieData;
 
   function handleOpenPaguModal() {
     const existing = paguSumberDana[selectedYear] || {};
@@ -183,7 +206,7 @@ export function AnggaranRealisasi() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { id: 'PAGU', title: "TOTAL PAGU", value: formatRp(paguFiltered, true), color: "bg-blue-500", icon: DollarSign, detail: filterSumberDana === 'semua' ? `Tahun Anggaran ${selectedYear}` : (activeSD?.nama || '') },
+          { id: 'PAGU', title: "TOTAL PAGU", value: formatRp(paguFiltered, true), color: "bg-blue-500", icon: DollarSign, detail: filterSumberDana === 'semua' ? `Tahun Anggaran ${selectedYear}` : `Tahun ${selectedYear} - ${activeSD?.nama || ''}` },
           { id: 'REALISASI', title: "TOTAL REALISASI", value: formatRp(totalRealisasi, true), color: "bg-emerald-500", icon: TrendingUp, detail: "Terserap" },
           { id: 'SISA', title: "SISA ANGGARAN", value: formatRp(Math.max(0, totalSisa), true), color: "bg-amber-500", icon: Wallet, detail: "Sisa Pagu" },
           { id: 'PERSENTASE', title: "PERSENTASE", value: `${pctSerapan}%`, color: "bg-purple-500", icon: PieChartIcon, detail: "Dari Total Pagu" }
@@ -233,59 +256,66 @@ export function AnggaranRealisasi() {
         </button>
       </div>
 
-      {/* Distribusi Pagu Multi-Tahun */}
-      {activeCard && activeCard !== 'PERSENTASE' && (
+      {/* Distribusi Pagu Per Sumber Dana */}
+      {activeCard && activeCard !== 'PERSENTASE' && (() => {
+        const activeSumberDanaList = sumberDanaList.filter(sd => sd.aktif);
+        
+        return (
       <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-800">
-            {activeCard === 'PAGU' ? 'Distribusi Pagu Per Tahun' : activeCard === 'REALISASI' ? 'Distribusi Realisasi Per Tahun' : 'Distribusi Sisa Anggaran Per Tahun'}
+            {activeCard === 'PAGU' ? 'Distribusi Pagu Per Sumber Dana' : activeCard === 'REALISASI' ? 'Distribusi Realisasi Per Sumber Dana' : 'Distribusi Sisa Anggaran Per Sumber Dana'}
+            <span className="text-gray-500 font-medium ml-1">({selectedYear})</span>
           </h3>
           <button onClick={() => setActiveCard(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2">
-          {availableYears
-            .filter(y => {
-              const total = Object.values(paguSumberDana[y] || {}).reduce((s, v) => s + v, 0) || globalPagu[y] || 0;
-              return total > 0 || y === currentYear || y === currentYear + 1;
-            })
-            .map(y => {
-              const yearSD = paguSumberDana[y] || {};
-              const sdTotal = Object.values(yearSD).reduce((s, v) => s + v, 0);
-              const paguThn = sdTotal > 0 ? sdTotal : (globalPagu[y] || 0);
-              
-              // Dummy logic for REALISASI and SISA distribution based on serapan
-              const serapanRatio = totalRealisasi > 0 && paguFiltered > 0 ? totalRealisasi / paguFiltered : 0.493; // fallback to 49.3%
-              const displayedTotal = activeCard === 'PAGU' ? paguThn : activeCard === 'REALISASI' ? paguThn * serapanRatio : paguThn * (1 - serapanRatio);
-              
-              return (
-                <div key={y} className="p-4 bg-slate-50 rounded-xl border border-slate-100 min-w-[200px] flex-shrink-0 flex flex-col">
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tahun {y}</div>
-                  <div className={`text-xl font-extrabold mb-3 ${activeCard === 'PAGU' ? 'text-blue-600' : activeCard === 'REALISASI' ? 'text-emerald-600' : 'text-amber-500'}`}>
-                    {formatRp(displayedTotal, true)}
+          {activeSumberDanaList.length === 0 && (
+            <div className="text-sm text-gray-500 italic p-4">Belum ada sumber dana aktif</div>
+          )}
+          {activeSumberDanaList.map(sd => {
+            const sdPagu = (paguSumberDana[selectedYear] || {})[sd.id] || 0;
+            
+            const sdRealisasi = leafSubKegiatans
+               .filter(k => k.sumberDana === sd.nama)
+               .reduce((sum, k) => sum + (k.realized || 0), 0);
+               
+            const sdSisa = Math.max(0, sdPagu - sdRealisasi);
+            const sdPct = sdPagu > 0 ? ((sdRealisasi / sdPagu) * 100).toFixed(1) : '0';
+            
+            const displayedTotal = activeCard === 'PAGU' ? sdPagu : activeCard === 'REALISASI' ? sdRealisasi : sdSisa;
+            
+            return (
+              <div key={sd.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 min-w-[240px] flex-shrink-0 flex flex-col">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{sd.nama}</div>
+                <div className={`text-xl font-extrabold mb-3 ${activeCard === 'PAGU' ? 'text-blue-600' : activeCard === 'REALISASI' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                  {formatRp(displayedTotal, true)}
+                </div>
+                
+                <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">
+                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
+                    <span>Pagu:</span>
+                    <span className="font-bold text-slate-700">{formatRp(sdPagu, true)}</span>
                   </div>
-                  <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">
-                    {sdTotal === 0 && (
-                      <div className="text-[11px] text-slate-400 italic">Belum ada alokasi per sumber dana</div>
-                    )}
-                    {sumberDanaList.filter(sd => sd.aktif).map(sd => {
-                      const val = yearSD[sd.id];
-                      if (!val) return null;
-                      const displayedVal = activeCard === 'PAGU' ? val : activeCard === 'REALISASI' ? val * serapanRatio : val * (1 - serapanRatio);
-                      return (
-                        <div key={sd.id} className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
-                          <span className="truncate">{sd.nama}</span>
-                          <span className="font-bold text-slate-700">{formatRp(displayedVal, true)}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
+                    <span>Realisasi:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-emerald-600">{formatRp(sdRealisasi, true)}</span>
+                      <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold">{sdPct}%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
+                    <span>Sisa:</span>
+                    <span className="font-bold text-amber-600">{formatRp(sdSisa, true)}</span>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
       </div>
-      )}
-
+        );
+      })()}
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -309,8 +339,8 @@ export function AnggaranRealisasi() {
             <div className="relative w-36 h-36">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={44} outerRadius={62} paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
-                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  <Pie data={chartPieData} cx="50%" cy="50%" innerRadius={44} outerRadius={62} paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
+                    {chartPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -395,7 +425,9 @@ export function AnggaranRealisasi() {
                     </tr>
 
                     {isExpanded && bidangList.map((bidang, bIdx) => {
-                      const t = currentYearTargetBidang[m.idx]?.[bidang.kode] || 0;
+                      const manualT = currentYearTargetBidang[m.idx]?.[bidang.kode];
+                      const autoT = autoTargetBidangBulan[m.idx]?.[bidang.kode] || 0;
+                      const t = manualT !== undefined ? manualT : autoT;
                       const r = realisasiBidangBulan[m.idx]?.[bidang.kode] || 0;
                       const pct = t > 0 ? Math.round((r / t) * 100) : 0;
                       const isLast = bIdx === bidangList.length - 1;
@@ -467,7 +499,7 @@ export function AnggaranRealisasi() {
                   </div>
                 ) : sumberDanaList.filter(sd => sd.aktif).map(sd => (
                   <div key={sd.id}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{sd.nama}</label>
+                    <label className="block text-sm font-bold text-gray-800 mb-1.5 uppercase tracking-wide">{sd.nama}</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
                       <input type="text" inputMode="numeric"
@@ -481,6 +513,36 @@ export function AnggaranRealisasi() {
                     </div>
                   </div>
                 ))}
+                
+                {newSdMode ? (
+                  <div className="mt-4 p-4 border border-blue-200 bg-blue-50/50 rounded-xl">
+                    <label className="block text-sm font-bold text-gray-800 mb-1.5">Nama Sumber Dana Baru</label>
+                    <div className="flex gap-2">
+                      <input type="text" autoFocus value={newSdValue} onChange={(e) => setNewSdValue(e.target.value)}
+                        placeholder="Contoh: DAU, DAK, BOS..."
+                        className="flex-1 px-4 py-2.5 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" />
+                      <button onClick={async () => {
+                        if (newSdValue.trim()) {
+                          try {
+                            const newSd = await addSumberDana(newSdValue.trim());
+                            setPaguInputPerSD(prev => ({ ...prev, [newSd.id]: '' }));
+                            setNewSdMode(false);
+                            setNewSdValue('');
+                          } catch (err) {
+                            alert("Gagal menambahkan sumber dana");
+                          }
+                        }
+                      }} className="px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Simpan</button>
+                      <button onClick={() => { setNewSdMode(false); setNewSdValue(''); }}
+                        className="px-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300">Batal</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setNewSdMode(true)}
+                    className="mt-2 w-full py-2.5 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl text-sm font-bold hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" /> Tambah Sumber Dana Baru
+                  </button>
+                )}
               </div>
               {/* Total auto-sum */}
               <div className="pt-3 border-t border-gray-200 flex items-center justify-between">

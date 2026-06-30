@@ -9,18 +9,13 @@ export function LaporanSubKegiatan() {
 
   const [filterQuery, setFilterQuery] = useState('');
   const [filterBagian, setFilterBagian] = useState('semua');
-  const [filterBulan, setFilterBulan] = useState('semua');
-  const [filterTahun, setFilterTahun] = useState('semua');
+  const [filterTanggal, setFilterTanggal] = useState('');
   const [filterStatus, setFilterStatus] = useState('semua');
 
   const filteredSubKegiatan = subKegiatanList.filter(k => !k.isWadah).filter(k => {
     if (filterQuery && !k.nama.toLowerCase().includes(filterQuery.toLowerCase())) return false;
     if (filterBagian !== 'semua' && !k.bidang.toLowerCase().includes(filterBagian.toLowerCase())) return false;
-    if (filterBulan !== 'semua') {
-      const monthStr = String(filterBulan).padStart(2, '0');
-      if (!k.tanggalMulai.includes(`-${monthStr}-`)) return false;
-    }
-    if (filterTahun !== 'semua' && !k.tanggalMulai.startsWith(String(filterTahun))) return false;
+    if (filterTanggal && !k.tanggalMulai.startsWith(filterTanggal)) return false;
     if (filterStatus !== 'semua' && k.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
     return true;
   });
@@ -33,7 +28,7 @@ export function LaporanSubKegiatan() {
     <div className="space-y-6">
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Nama Kegiatan</label>
             <input type="text" value={filterQuery} onChange={(e) => setFilterQuery(e.target.value)}
@@ -51,24 +46,8 @@ export function LaporanSubKegiatan() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-            <select value={filterBulan} onChange={(e) => setFilterBulan(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="semua">Semua Bulan</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                <option key={m} value={m}>{new Date(2000, m - 1).toLocaleString('id-ID', { month: 'long' })}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-            <select value={filterTahun} onChange={(e) => setFilterTahun(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="semua">Semua Tahun</option>
-              {Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+            <input type="date" value={filterTanggal} onChange={e => setFilterTanggal(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-700" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -103,7 +82,11 @@ export function LaporanSubKegiatan() {
           <div className="bg-white p-8 rounded shadow-sm">
             <div className="text-center mb-8 pb-6 border-b-2 border-gray-300">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">LAPORAN KEGIATAN</h1>
-              <p className="text-gray-600">Periode: {filterBulan === 'semua' ? 'Semua Waktu' : `Bulan ${filterBulan}`}</p>
+              <p className="text-gray-600">
+                Tanggal: {filterTanggal 
+                  ? new Date(filterTanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) 
+                  : 'Semua Waktu'}
+              </p>
             </div>
 
             <div className="mb-6">

@@ -72,7 +72,7 @@ export function RoleAkses() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Manajemen Pengguna</h1>
+        <h1 className="text-2xl font-bold text-gray-900"></h1>
         <button onClick={handleOpenAdd}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           <Plus className="w-5 h-5" /> Tambah Pengguna

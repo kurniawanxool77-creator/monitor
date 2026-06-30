@@ -15,7 +15,7 @@ function formatRpShort(n) {
 export function LaporanAnggaran() {
   const { dataUraian, subKegiatanMeta, sumberDanaList } = useAppData();
   const [filterBagian, setFilterBagian] = useState('semua');
-  const [filterPeriode, setFilterPeriode] = useState('semua');
+  const [filterTanggal, setFilterTanggal] = useState('');
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
   const [filterLevel, setFilterLevel] = useState('perBidang');
 
@@ -96,15 +96,8 @@ export function LaporanAnggaran() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Periode</label>
-            <select value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="semua">Semua Periode</option>
-              <option value="q1">Triwulan 1</option>
-              <option value="q2">Triwulan 2</option>
-              <option value="q3">Triwulan 3</option>
-              <option value="q4">Triwulan 4</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+            <input type="date" value={filterTanggal} onChange={e => setFilterTanggal(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-700" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
@@ -148,7 +141,11 @@ export function LaporanAnggaran() {
             <div className="text-center mb-8 pb-6 border-b-2 border-gray-300">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">LAPORAN ANGGARAN &amp; REALISASI</h1>
               <p className="text-gray-600">Sekretariat DPRD Provinsi Jawa Tengah</p>
-              <p className="text-gray-600">Periode: Tahun Anggaran {currentYear}</p>
+              <p className="text-gray-600">
+                Tanggal: {filterTanggal 
+                  ? new Date(filterTanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) 
+                  : `Semua Waktu (Tahun Anggaran ${currentYear})`}
+              </p>
               <p className="text-gray-700 font-semibold mt-1">
                 Sumber Dana: <span className="text-blue-700">{sdLabel}</span>
               </p>
