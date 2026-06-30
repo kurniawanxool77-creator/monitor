@@ -2,20 +2,20 @@ import { createBrowserRouter } from "react-router-dom";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { Login } from "./components/layout/Login";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
-import { Dashboard } from "./components/pages/Dashboard";
-import { AgendaSubKegiatan } from "./components/pages/AgendaSubKegiatan";
-import { KalenderSubKegiatan } from "./components/pages/KalenderSubKegiatan";
-import { ProgressSubKegiatan } from "./components/pages/ProgressSubKegiatan";
-import { AnggaranRealisasi } from "./components/pages/AnggaranRealisasi";
-import { LaporanSubKegiatan } from "./components/pages/LaporanSubKegiatan";
-import { LaporanAnggaran } from "./components/pages/LaporanAnggaran";
-import { RoleAkses } from "./components/pages/RoleAkses";
-import { MasterData } from "./components/pages/MasterData";
-import { DetailSubKegiatan } from "./components/pages/DetailSubKegiatan";
-import { RealisasiPage } from "./components/pages/RealisasiPage";
-import { LogAktifitas } from "./components/pages/LogAktifitas";
-import { PengaturanAkun } from "./components/pages/PengaturanAkun";
-import { DetailSSKView } from "./components/pages/DetailSSKView";
+import { Dashboard } from "./components/dashboard/Dashboard";
+import { AgendaSubKegiatan } from "./components/pages/agenda/AgendaSubKegiatan";
+import { KalenderSubKegiatan } from "./components/pages/kalender/KalenderSubKegiatan";
+import { ProgressSubKegiatan } from "./components/pages/progress/ProgressSubKegiatan";
+import { AnggaranRealisasi } from "./components/pages/anggaran/AnggaranRealisasi";
+import { LaporanSubKegiatan } from "./components/pages/laporan/LaporanSubKegiatan";
+import { LaporanAnggaran } from "./components/pages/laporan/LaporanAnggaran";
+import { RoleAkses } from "./components/pages/roleakses/RoleAkses";
+import { MasterData } from "./components/pages/masterdata/MasterData";
+import { DetailSubKegiatan } from "./components/pages/detail/DetailSubKegiatan";
+import { RealisasiPage } from "./components/pages/anggaran/RealisasiPage";
+import { LogAktifitas } from "./components/pages/logaktifitas/LogAktifitas";
+import { PengaturanAkun } from "./components/pages/pengaturanakun/PengaturanAkun";
+import { DetailSSKView } from "./components/pages/detail/DetailSSKView";
 
 export const router = createBrowserRouter([
   {

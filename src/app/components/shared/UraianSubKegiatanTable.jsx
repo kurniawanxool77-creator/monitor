@@ -13,13 +13,13 @@ function formatRp(n, short = false) {
 }
 
 export function UraianSubKegiatanTable({ onOpenPaguModal }) {
-  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList, paguSumberDana } = useAppData();
+  const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList, paguSumberDana, paguBidangSumberDana, setPaguBidangSumberDana } = useAppData();
   const [expandedKode, setExpandedKode] = useState(new Set(['1', '2', '3', '4', '5']));
   const [selectedBidang, setSelectedBidang] = useState(null);
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
 
-  const [filterBulan, setFilterBulan] = useState(new Date().getMonth().toString());
-  const [filterTahun, setFilterTahun] = useState(new Date().getFullYear().toString());
+  const [filterBulan, setFilterBulan] = useState('semua');
+  const [filterTahun, setFilterTahun] = useState('semua');
   const [searchQuery, setSearchQuery] = useState('');
 
   const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -29,7 +29,7 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedKode, setSelectedKode] = useState('');
-  const [jumlah, setJumlah] = useState('');
+  const [activeRows, setActiveRows] = useState([]);
   const [keterangan, setKeterangan] = useState('');
   const [sukses, setSukses] = useState(false);
 
@@ -141,8 +141,7 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
     }
   }
 
-  const filteredData = uraianAnggaran.filter(u => {
-    if (selectedBidang && !(u.kode === selectedBidang || u.kode.startsWith(selectedBidang + '.'))) return false;
+  const baseFilteredData = uraianAnggaran.filter(u => {
     if ((isDateFilterActive || isSearchActive) && !matchedKodes.has(u.kode)) return false;
     // Filter Sumber Dana: hanya tampilkan node yang memiliki meta dengan sumberDana yang cocok
     if (filterSumberDana !== 'semua') {
@@ -163,12 +162,30 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
     return true;
   });
 
-  const uraianTotal = filteredData.reduce((a, u) => u.level === 1 ? a + u.target : a, 0);
-  const uraianRealisasiTotal = filteredData.reduce((a, u) => u.level === 1 ? a + u.realisasi : a, 0);
+  // Hitung target efektif (pagu) berdasarkan filter sumber dana
+  const baseDisplayData = baseFilteredData.map(u => {
+    if (u.level === 1) {
+      if (filterSumberDana !== 'semua') {
+        return { ...u, target: paguBidangSumberDana[u.kode]?.[filterSumberDana] || 0 };
+      } else {
+        const sum = Object.values(paguBidangSumberDana[u.kode] || {}).reduce((a, b) => a + b, 0);
+        return { ...u, target: sum };
+      }
+    }
+    return u;
+  });
+
+  const displayData = baseDisplayData.filter(u => {
+    if (selectedBidang && !(u.kode === selectedBidang || u.kode.startsWith(selectedBidang + '.'))) return false;
+    return true;
+  });
+
+  const uraianTotal = displayData.reduce((a, u) => u.level === 1 ? a + u.target : a, 0);
+  const uraianRealisasiTotal = displayData.reduce((a, u) => u.level === 1 ? a + u.realisasi : a, 0);
   const sisaTotal = uraianTotal - uraianRealisasiTotal;
 
-  // Ambil data per Bidang (level 1) untuk kartu ringkasan
-  const bidangList = uraianAnggaran.filter(u => u.level === 1);
+  // Ambil data per Bidang (level 1) untuk kartu ringkasan dari base data (tidak terfilter selectedBidang)
+  const bidangList = baseDisplayData.filter(u => u.level === 1);
 
   const totalPaguDialokasikan = bidangList.reduce((acc, b) => acc + b.target, 0);
   const sisaPaguGlobal = paguTotalGlobal - totalPaguDialokasikan;
@@ -176,54 +193,93 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
   // Auto-fill form when selectedKode changes
   useEffect(() => {
     if (selectedKode) {
-      const b = bidangList.find(x => x.kode === selectedKode);
-      if (b) {
-        setJumlah(formatInputRupiah(b.target.toString()));
+      const existing = paguBidangSumberDana[selectedKode] || {};
+      const activeSd = sumberDanaList.filter(sd => sd.aktif);
+      const b = uraianAnggaran.find(x => x.kode === selectedKode && x.level === 1);
+      
+      let rows = [];
+      if (activeSd.length > 0) {
+        Object.entries(existing).forEach(([sdId, val]) => {
+          if (val > 0 && activeSd.find(sd => String(sd.id) === sdId)) {
+            rows.push({ id: Math.random().toString(36).substr(2, 9), sdId: String(sdId), amount: String(val) });
+          }
+        });
+      } else {
+        const val = existing['default'] || (b ? b.target : 0);
+        if (val > 0) rows.push({ id: 'default', sdId: 'default', amount: String(val) });
       }
+      setActiveRows(rows);
     } else {
-      setJumlah('');
+      setActiveRows([]);
     }
-  }, [selectedKode]); // Remove bidangList from deps to avoid loop
+  }, [selectedKode, paguBidangSumberDana, sumberDanaList, uraianAnggaran]);
 
   function handleSimpanPagu() {
-    if (!selectedKode || !jumlah) return;
-    const amount = parseInt(jumlah.replace(/[^0-9]/g, ''), 10);
-    if (isNaN(amount) || amount < 0) return;
+    if (!selectedKode) return;
+    
+    const newPagu = {};
+    let totalAmount = 0;
+    
+    const activeSds = sumberDanaList.filter(sd => sd.aktif);
+    
+    if (activeSds.length > 0) {
+      for (const row of activeRows) {
+        if (!row.sdId) continue;
+        const val = Number((row.amount || '').replace(/\D/g, ''));
+        if (val > 0) {
+          const sd = activeSds.find(s => String(s.id) === row.sdId);
+          if (!sd) continue;
 
-    const b = bidangList.find(x => x.kode === selectedKode);
-    if (!b) return;
-
-    const currentTarget = b.target;
-    // Check available pagu if increasing
-    const difference = amount - currentTarget;
-    if (difference > sisaPaguGlobal) {
-      alert(`Sisa pagu global tidak mencukupi! Sisa: ${formatRp(sisaPaguGlobal)}`);
-      return;
+          const globalSD = sdPaguThisYear[sd.id] || 0;
+          const allocatedSD = uraianAnggaran.filter(u => u.level === 1).reduce((acc, b) => {
+            if (b.kode === selectedKode) return acc;
+            return acc + (paguBidangSumberDana[b.kode]?.[sd.id] || 0);
+          }, 0);
+          const sisaSD = globalSD - allocatedSD;
+          const currentVal = paguBidangSumberDana[selectedKode]?.[sd.id] || 0;
+          
+          if (globalSD > 0 && val > sisaSD + currentVal) {
+            alert(`Pagu ${sd.nama} melebihi sisa global! Sisa yang bisa ditambahkan: ${formatRp(sisaSD + currentVal)}`);
+            return;
+          }
+          
+          newPagu[sd.id] = (newPagu[sd.id] || 0) + val;
+          totalAmount += val;
+        }
+      }
+    } else {
+      const row = activeRows[0];
+      totalAmount = row ? Number((row.amount || '').replace(/\D/g, '')) : 0;
+      newPagu['default'] = totalAmount;
     }
+
+    const b = uraianAnggaran.find(x => x.kode === selectedKode && x.level === 1);
+    if (!b) return;
 
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
 
-    updateUraian(selectedKode, { target: amount });
+    updateUraian(selectedKode, { target: totalAmount });
+    setPaguBidangSumberDana(prev => ({ ...prev, [selectedKode]: newPagu }));
 
     addActivityLog({
       user: user?.nama || 'Admin',
       action: 'Set Pagu Bidang',
-      details: `Mengubah pagu bidang ${b.uraian} (${selectedKode}) menjadi ${formatRp(amount)}`
+      details: `Mengubah pagu bidang ${b.uraian} (${selectedKode}) menjadi ${formatRp(totalAmount)}`
     });
     setSukses(true);
     setTimeout(() => {
       setSukses(false);
       setShowModal(false);
       setSelectedKode('');
-      setJumlah('');
+      setPaguBidangInput({});
     }, 1500);
   }
 
   function handleCloseModal() {
     setShowModal(false);
     setSelectedKode('');
-    setJumlah('');
+    setActiveRows([]);
     setSukses(false);
   }
 
@@ -233,9 +289,12 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
     return parseInt(num, 10).toLocaleString('id-ID');
   }
 
+  const pctTotal = uraianTotal > 0 ? ((uraianRealisasiTotal / uraianTotal) * 100).toFixed(1) : '0';
+
   return (
     <div className="space-y-6">
       {/* ── KARTU RINGKASAN PER BIDANG ── */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {bidangList.map(b => {
           const sisa = b.target - b.realisasi;
@@ -329,15 +388,6 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
           <Plus className="w-4 h-4" />
           Tambah Pagu Bidang
         </button>
-        {onOpenPaguModal && (
-          <button
-            onClick={onOpenPaguModal}
-            className="flex items-center gap-2 px-4 py-2.5 border border-blue-300 text-blue-700 hover:bg-blue-50 active:scale-95 text-sm font-semibold rounded-xl transition-all flex-shrink-0"
-          >
-            <DollarSign className="w-4 h-4" />
-            Set Pagu Anggaran
-          </button>
-        )}
       </div>
 
       {/* ── TABEL DETAIL ── */}
@@ -375,7 +425,7 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
             <tbody>
               {(() => {
                 let kegiatanCount = 0;
-                return filteredData.filter((u) => isVisible(u.kode)).map((u) => {
+                return displayData.filter((u) => isVisible(u.kode)).map((u) => {
                 const pct = u.target > 0 ? Math.round((u.realisasi / u.target) * 100) : 0;
                 const sisa = u.target - u.realisasi;
                 const hasChildren = uraianAnggaran.some((x) => x.kode.startsWith(u.kode + '.') && x.kode.split('.').length === u.kode.split('.').length + 1);
@@ -479,7 +529,7 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
                 <h2 className="text-lg font-bold text-slate-800">Set Pagu Bidang</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Alokasikan pagu global ke masing-masing bidang</p>
               </div>
-              <button onClick={handleCloseModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors">
+              <button type="button" onClick={handleCloseModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -492,76 +542,180 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
                 <p className="font-bold text-emerald-700 text-lg">Pagu Bidang berhasil diperbarui!</p>
               </div>
             ) : (
-              <div className="p-6 space-y-6">
+              <div className="flex flex-col max-h-[calc(90vh-70px)]">
+                <div className="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
 
-                {/* Global Pagu Summary */}
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Wallet className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1 grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs text-slate-500 font-medium mb-0.5">Total Pagu Global</div>
-                      <div className="font-bold text-slate-800 text-sm">{formatRp(paguTotalGlobal, true)}</div>
+                  {/* Global Pagu Summary */}
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Wallet className="w-5 h-5 text-blue-600" />
                     </div>
-                    <div>
-                      <div className="text-xs text-slate-500 font-medium mb-0.5">Sisa Belum Dialokasikan</div>
-                      <div className={`font-bold text-sm ${sisaPaguGlobal < 0 ? 'text-red-600' : 'text-blue-700'}`}>
-                        {formatRp(sisaPaguGlobal, true)}
+                    <div className="flex-1 grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs text-slate-500 font-medium mb-0.5">Total Pagu Global</div>
+                        <div className="font-bold text-slate-800 text-sm">{formatRp(paguTotalGlobal, true)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 font-medium mb-0.5">Sisa Belum Dialokasikan</div>
+                        <div className={`font-bold text-sm ${sisaPaguGlobal < 0 ? 'text-red-600' : 'text-blue-700'}`}>
+                          {formatRp(sisaPaguGlobal, true)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Pilih Bidang <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={selectedKode}
                       onChange={(e) => setSelectedKode(e.target.value)}
-                      className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white"
                     >
                       <option value="">-- Pilih Bidang --</option>
-                      {bidangList.map(b => (
+                      {uraianAnggaran.filter(u => u.level === 1).map(b => (
                         <option key={b.kode} value={b.kode}>{b.uraian}</option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Pagu Bidang (Rp) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">Rp</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={jumlah}
-                        disabled={!selectedKode}
-                        onChange={e => setJumlah(formatInputRupiah(e.target.value))}
-                        className="w-full pl-10 pr-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:bg-slate-50 disabled:cursor-not-allowed font-medium text-slate-800"
-                      />
-                    </div>
-                    {selectedKode && (
-                      <p className="text-xs text-slate-500 mt-2">
-                        Mengubah pagu ini akan memotong dari sisa pagu global yang belum dialokasikan.
-                      </p>
+                  <div className="space-y-3">
+                    {sumberDanaList.filter(sd => sd.aktif).length === 0 ? (
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                          Total Pagu Bidang
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">Rp</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={activeRows[0]?.amount ? Number(activeRows[0].amount).toLocaleString('id-ID') : ''}
+                            disabled={!selectedKode}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/\D/g, '');
+                              setActiveRows([{ id: 'default', sdId: 'default', amount: raw }]);
+                            }}
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:bg-slate-50 disabled:cursor-not-allowed font-medium text-slate-800"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mt-4">
+                          <label className="block text-sm font-semibold text-slate-700">
+                            Distribusi Sumber Dana
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveRows([...activeRows, { id: Math.random().toString(36).substr(2,9), sdId: '', amount: '' }]);
+                            }}
+                            disabled={!selectedKode}
+                            className="text-xs flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Plus className="w-3.5 h-3.5"/> Tambah Dana
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {activeRows.map((row, index) => {
+                            const selectedSdIds = activeRows.map(r => r.sdId).filter(id => id !== '');
+                            const availableSds = sumberDanaList.filter(sd => sd.aktif && (String(sd.id) === row.sdId || !selectedSdIds.includes(String(sd.id))));
+                            
+                            let sisaSDText = '';
+                            if (row.sdId) {
+                              const sdObj = sumberDanaList.find(s => String(s.id) === row.sdId);
+                              if (sdObj) {
+                                const globalSD = sdPaguThisYear[sdObj.id] || 0;
+                                const allocatedSD = uraianAnggaran.filter(u => u.level === 1).reduce((acc, b) => {
+                                  if (b.kode === selectedKode) return acc;
+                                  return acc + (paguBidangSumberDana[b.kode]?.[sdObj.id] || 0);
+                                }, 0);
+                                const sisaSD = globalSD - allocatedSD;
+                                const inputAmount = Number((row.amount || '').replace(/\D/g, ''));
+                                const sisaSekarang = sisaSD - inputAmount;
+                                sisaSDText = `Sisa ${sdObj.nama}: ${formatRp(sisaSekarang)}`;
+                              }
+                            }
+
+                            return (
+                              <div key={row.id} className="flex flex-col gap-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                                <div className="flex items-center gap-2">
+                                  <select 
+                                    value={row.sdId} 
+                                    onChange={(e) => {
+                                      const newRows = [...activeRows];
+                                      newRows[index].sdId = e.target.value;
+                                      setActiveRows(newRows);
+                                    }}
+                                    className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white text-slate-700 font-medium"
+                                  >
+                                    <option value="">-- Pilih Sumber Dana --</option>
+                                    {availableSds.map(sd => (
+                                      <option key={sd.id} value={String(sd.id)}>{sd.nama}</option>
+                                    ))}
+                                  </select>
+                                  <button type="button" onClick={() => {
+                                    const newRows = [...activeRows];
+                                    newRows.splice(index, 1);
+                                    setActiveRows(newRows);
+                                  }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                    <X className="w-4 h-4"/>
+                                  </button>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">Rp</span>
+                                    <input 
+                                      type="text" inputMode="numeric" placeholder="0"
+                                      value={row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}
+                                      onChange={e => {
+                                        const newRows = [...activeRows];
+                                        newRows[index].amount = e.target.value.replace(/\D/g, '');
+                                        setActiveRows(newRows);
+                                      }}
+                                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white font-medium text-slate-800"
+                                    />
+                                  </div>
+                                </div>
+                                {sisaSDText && <div className="text-[10px] font-semibold text-slate-500 pl-1">{sisaSDText}</div>}
+                              </div>
+                            );
+                          })}
+                          {activeRows.length === 0 && selectedKode && (
+                            <div className="text-center p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50/50 text-xs font-medium text-slate-500">
+                              Belum ada sumber dana dialokasikan.<br/>Klik "Tambah Dana" untuk mulai.
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
+                  
+                  {selectedKode && (
+                    <div className="pt-3 border-t border-slate-100 flex justify-between items-center mt-4">
+                      <span className="text-sm font-semibold text-slate-700">Total Pagu Disimpan</span>
+                      <span className="text-base font-bold text-blue-700">
+                        {formatRp(
+                          activeRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+                        , true)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button onClick={handleCloseModal} className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+                  <button type="button" onClick={handleCloseModal} className="flex-1 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors bg-white">
                     Batal
                   </button>
                   <button
+                    type="button"
                     onClick={handleSimpanPagu}
-                    disabled={!selectedKode || !jumlah}
-                    className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    disabled={!selectedKode}
+                    className="flex-1 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     Simpan Pagu
                   </button>

@@ -16,146 +16,25 @@ export function AppDataProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
   // paguSumberDana: { [tahun]: { [sumberDanaId]: jumlahPagu } }
   const [paguSumberDana, setPaguSumberDana] = useState({});
+  // paguBidangSumberDana: { [bidangKode]: { [sumberDanaId]: jumlahPagu } }
+  const [paguBidangSumberDana, setPaguBidangSumberDana] = useState({});
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-          setIsLoaded(true);
-          return;
-        }
+    // Kosongkan semua data awal sesuai permintaan (mulai dari 0)
+    setAllDataUraian([]);
+    setSubKegiatanMeta([]);
+    setSumberDanaList([]);
 
-        const headers = { 'Authorization': `Bearer ${token}` };
+    setAppUsers([
+      { id: '1', email: 'admin@dprd.go.id', nama: 'Admin DPRD', role: 'superadmin', aktif: true, bidangKode: 'ALL' },
+      { id: '2', email: 'operator@dprd.go.id', nama: 'Operator Umum', role: 'admin', aktif: true, bidangKode: '2' }
+    ]);
 
-        const [uraianRes, subKegiatanRes, logsRes, sumberDanaRes, usersRes] = await Promise.all([
-          fetch(`${API_URL}/kegiatan/uraian`, { headers }),
-          fetch(`${API_URL}/kegiatan/sub-kegiatan`, { headers }),
-          fetch(`${API_URL}/kegiatan/activity-logs`, { headers }),
-          fetch(`${API_URL}/admin/sumber-dana`, { headers }),
-          fetch(`${API_URL}/admin/users`, { headers })
-        ]);
+    setAllActivityLogs([
+      { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi berjalan murni dengan data dummy lokal' }
+    ]);
 
-        if (uraianRes.ok) {
-          const uraianData = (await uraianRes.json()).data;
-          setAllDataUraian(uraianData.map(u => ({
-            kode: u.kode,
-            uraian: u.nama,
-            level: u.level,
-            target: u.pagu,
-            realized: 0,
-            id: u.id
-          })));
-        }
-
-        if (subKegiatanRes.ok) {
-          const skData = (await subKegiatanRes.json()).data;
-          setSubKegiatanMeta(skData.map(sk => ({
-            id: sk.uraian.kode,
-            realId: sk.id,
-            penanggungJawab: sk.penanggungJawab,
-            tanggalMulai: sk.tanggalMulai,
-            tanggalSelesai: sk.tanggalSelesai,
-            deskripsi: `Pelaksanaan ${sk.nama}`,
-            steps: sk.steps.map(s => ({
-              id: s.id,
-              nama: s.nama,
-              selesai: s.completed,
-              urutan: s.urutan
-            })),
-            isWadah: sk.isWadah,
-            isApproved: sk.status !== 'PERSIAPAN',
-            sumberDana: sk.sumberDana || 'Belum ditentukan',
-            anggaranDiminta: sk.anggaranSubKegiatan
-          })));
-        }
-
-        if (logsRes.ok) {
-          const logsData = (await logsRes.json()).data;
-          setAllActivityLogs(logsData.map(l => ({
-            id: l.id,
-            timestamp: l.createdAt,
-            user: l.user.nama,
-            action: l.action,
-            details: l.details
-          })));
-        }
-
-        // Load SumberDana from backend
-        if (sumberDanaRes.ok) {
-          const sdData = (await sumberDanaRes.json()).data;
-          setSumberDanaList(sdData.map(sd => ({
-            id: sd.id,
-            nama: sd.nama,
-            aktif: sd.aktif
-          })));
-        }
-
-        // Load AppUsers from backend
-        if (usersRes.ok) {
-          const usersData = (await usersRes.json()).data;
-          setAppUsers(usersData.map(u => ({
-            id: u.id,
-            email: u.email,
-            nama: u.nama,
-            role: u.role.toLowerCase(),
-            aktif: u.aktif,
-            bidangKode: u.bidangKode
-          })));
-        }
-
-      } catch (error) {
-        console.error('Error fetching data, using mock/offline fallback:', error);
-        
-        // Fallback to mock data from data.js
-        setAllDataUraian(uraianAnggaran.map(u => ({
-          kode: u.kode,
-          uraian: u.uraian,
-          level: u.level,
-          target: u.target || 0,
-          realized: u.realisasi || 0,
-          id: `mock-${u.kode}`
-        })));
-
-        setSubKegiatanMeta(subKegiatanList.map(sk => ({
-          id: sk.id,
-          realId: `mock-sk-${sk.id}`,
-          penanggungJawab: sk.penanggungJawab,
-          tanggalMulai: sk.tanggalMulai,
-          tanggalSelesai: sk.tanggalSelesai,
-          deskripsi: sk.deskripsi,
-          steps: sk.steps.map((s, idx) => ({
-            id: s.id || `s-${sk.id}-${idx}`,
-            nama: s.nama,
-            selesai: s.selesai,
-            urutan: idx + 1
-          })),
-          isWadah: sk.isWadah,
-          isApproved: sk.isApproved,
-          sumberDana: sk.sumberDana,
-          anggaranDiminta: sk.anggaranDiminta
-        })));
-
-        setSumberDanaList(mockSumberDana.map((sd, index) => ({
-          id: index + 1,
-          nama: sd,
-          aktif: true
-        })));
-
-        setAppUsers([
-          { id: '1', email: 'admin@dprd.go.id', nama: 'Admin DPRD', role: 'superadmin', aktif: true, bidangKode: 'ALL' },
-          { id: '2', email: 'operator@dprd.go.id', nama: 'Operator Umum', role: 'admin', aktif: true, bidangKode: '2' }
-        ]);
-
-        setAllActivityLogs([
-          { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'Demo Mode', details: 'Sistem berjalan dalam mode offline/demo' }
-        ]);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
-    loadData();
+    setIsLoaded(true);
   }, []);
 
   // local storage no longer used for users and sumberdana
@@ -365,35 +244,16 @@ export function AppDataProvider({ children }) {
   };
 
   const addUraianBaru = async (newUraian) => {
-    try {
-      const parts = newUraian.kode.split('.');
-      const parentKode = parts.length > 1 ? parts.slice(0, -1).join('.') : null;
-      let parentId = null;
-      if (parentKode) {
-        const parent = allDataUraian.find(u => u.kode === parentKode);
-        if (parent) parentId = parent.id;
-      }
+    const parts = newUraian.kode.split('.');
+    const parentKode = parts.length > 1 ? parts.slice(0, -1).join('.') : null;
+    
+    const id = `mock-new-${Date.now()}`;
+    const toAdd = { ...newUraian, id };
 
-      const res = await api.post('/kegiatan/uraian', {
-        kode: newUraian.kode,
-        nama: newUraian.uraian,
-        level: newUraian.level,
-        pagu: newUraian.target || 0,
-        parentId
-      });
-
-      setAllDataUraian(prev => {
-        if (prev.some(u => u.kode === newUraian.kode)) return prev;
-        return [...prev, { ...newUraian, id: res.id }];
-      });
-    } catch (err) {
-      console.error('Failed to add Uraian', err);
-      // Fallback local update to keep UI working
-      setAllDataUraian(prev => {
-        if (prev.some(u => u.kode === newUraian.kode)) return prev;
-        return [...prev, newUraian];
-      });
-    }
+    setAllDataUraian(prev => {
+      if (prev.some(u => u.kode === newUraian.kode)) return prev;
+      return [...prev, toAdd];
+    });
   };
 
   const updateUraian = (kode, updates) => {
@@ -466,21 +326,6 @@ export function AppDataProvider({ children }) {
   };
 
   const addRealisasi = async (kode, jumlah) => {
-    try {
-      const meta = subKegiatanMeta.find(m => m.id === kode);
-      if (meta && meta.realId) {
-        await api.post('/kegiatan/realisasi', {
-          subKegiatanId: meta.realId,
-          jumlah,
-          bulan: new Date().getMonth() + 1,
-          tahun: new Date().getFullYear(),
-          keterangan: 'Realisasi anggaran frontend'
-        });
-      }
-    } catch (err) {
-      console.error('Failed to add Realisasi', err);
-    }
-
     setAllDataUraian(prev => prev.map(u =>
       u.kode === kode ? { ...u, realized: u.realized + jumlah } : u
     ));
@@ -525,63 +370,32 @@ export function AppDataProvider({ children }) {
   };
 
   const addUser = async (newUser) => {
-    try {
-      const res = await api.post('/admin/users', newUser);
-      setAppUsers(prev => [...prev, { ...newUser, id: res.data.id }]);
-      addActivityLog({ user: user?.nama || 'System', action: 'Menambah User', details: `Menambah user baru: ${newUser.email}` });
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
+    const id = `user-${Date.now()}`;
+    setAppUsers(prev => [...prev, { ...newUser, id }]);
+    addActivityLog({ user: user?.nama || 'System', action: 'Menambah User', details: `Menambah user baru: ${newUser.email}` });
   };
 
   const updateUser = async (id, updatedData) => {
-    try {
-      await api.patch(`/admin/users/${id}`, updatedData);
-      setAppUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
-      addActivityLog({ user: user?.nama || 'System', action: 'Mengubah User', details: `Mengubah user: ${updatedData.email || id}` });
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
+    setAppUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
+    addActivityLog({ user: user?.nama || 'System', action: 'Mengubah User', details: `Mengubah user: ${updatedData.email || id}` });
   };
 
   const deleteUser = async (id) => {
-    try {
-      await api.delete(`/admin/users/${id}`);
-      setAppUsers(prev => prev.filter(u => u.id !== id));
-      addActivityLog({ user: user?.nama || 'System', action: 'Menghapus User', details: `Menghapus user: ${id}` });
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
+    setAppUsers(prev => prev.filter(u => u.id !== id));
+    addActivityLog({ user: user?.nama || 'System', action: 'Menghapus User', details: `Menghapus user: ${id}` });
   };
 
   const addSumberDana = async (nama) => {
-    try {
-      const res = await api.post('/admin/sumber-dana', { nama });
-      setSumberDanaList(prev => [...prev, { id: res.data.id, nama: res.data.nama, aktif: true }]);
-      addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana', details: `Menambah sumber dana: ${nama}` });
-      return res.data;
-    } catch (err) {
-      console.warn('Failed to add sumber dana via API, adding to local state (offline mode):', err);
-      const newId = `mock-sd-${Date.now()}`;
-      const newSd = { id: newId, nama, aktif: true };
-      setSumberDanaList(prev => [...prev, newSd]);
-      addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana (Offline)', details: `Menambah sumber dana: ${nama}` });
-      return newSd;
-    }
+    const newId = `mock-sd-${Date.now()}`;
+    const newSd = { id: newId, nama, aktif: true };
+    setSumberDanaList(prev => [...prev, newSd]);
+    addActivityLog({ user: user?.nama || 'System', action: 'Menambah Sumber Dana', details: `Menambah sumber dana: ${nama}` });
+    return newSd;
   };
 
   const deleteSumberDana = async (id) => {
-    try {
-      await api.delete(`/admin/sumber-dana/${id}`);
-      setSumberDanaList(prev => prev.filter(u => u.id !== id));
-      addActivityLog({ user: user?.nama || 'System', action: 'Menghapus Sumber Dana', details: `Menghapus sumber dana: ${id}` });
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
+    setSumberDanaList(prev => prev.filter(u => u.id !== id));
+    addActivityLog({ user: user?.nama || 'System', action: 'Menghapus Sumber Dana', details: `Menghapus sumber dana: ${id}` });
   };
 
   // Helper: set pagu untuk satu sumber dana pada satu tahun
@@ -617,6 +431,7 @@ export function AppDataProvider({ children }) {
     addSumberDana,
     deleteSumberDana,
     paguSumberDana, setPaguSumberDana, setPaguPerSumberDana, getPaguTotalByTahun,
+    paguBidangSumberDana, setPaguBidangSumberDana,
     user,
   };
 
