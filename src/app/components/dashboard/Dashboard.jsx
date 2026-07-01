@@ -339,10 +339,11 @@ export function Dashboard() {
                   {expandedKegiatanId === kg.id && (
                     <div className="p-4 bg-slate-50 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
                       {/* Progress Timeline */}
-                      <div className="mb-8 px-6">
-                        <div className="flex items-center justify-between relative">
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `${kg.progress}%` }}></div>
+                      <div className="mb-8 px-2">
+                        <div className="overflow-x-auto pb-4 custom-scrollbar">
+                          <div className="flex items-center justify-between relative min-w-[400px] px-4">
+                            <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 rounded-full z-0"></div>
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `calc(${kg.progress}% - 2rem)` }}></div>
                           
                           {kg.steps?.map((step, idx) => {
                             const isDone = step.selesai;
@@ -357,6 +358,7 @@ export function Dashboard() {
                               </div>
                             );
                           })}
+                        </div>
                         </div>
                       </div>
 
