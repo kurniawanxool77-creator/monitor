@@ -393,7 +393,7 @@ export function UpdateProgressModal({
                   <div className="flex gap-2">
                     <textarea value={catatan} 
                       onChange={(e) => setCatatan(e.target.value)}
-                      onBlur={() => updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan })}
+                      onBlur={() => updateSubKegiatanMetadata({ id: subKegiatan.id, catatanProgress: catatan })}
                       placeholder="Tulis catatan atau keterangan progress..."
                       rows={2}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
@@ -501,7 +501,7 @@ export function UpdateProgressModal({
         {/* ── Footer ── */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
           <button onClick={() => {
-              updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan });
+              updateSubKegiatanMetadata({ id: subKegiatan.id, catatanProgress: catatan });
               onClose();
             }}
             className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all">

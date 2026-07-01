@@ -55,7 +55,11 @@ export function AppDataProvider({ children }) {
     if (savedUraian && savedMeta) {
       try {
         setAllDataUraian(JSON.parse(savedUraian));
-        setSubKegiatanMeta(JSON.parse(savedMeta));
+        
+        const parsedMeta = JSON.parse(savedMeta);
+        const validMeta = Array.isArray(parsedMeta) ? parsedMeta.filter(m => typeof m === 'object' && m !== null && m.id) : [];
+        setSubKegiatanMeta(validMeta);
+        
         if(savedSumberDana) setSumberDanaList(JSON.parse(savedSumberDana));
         if(savedPagu) setPaguSumberDana(JSON.parse(savedPagu));
         if(savedPaguBidang) setPaguBidangSumberDana(JSON.parse(savedPaguBidang));
@@ -417,7 +421,7 @@ export function AppDataProvider({ children }) {
       const idx = prev.findIndex(m => m.id === meta.id);
       if (idx !== -1) {
         const next = [...prev];
-        next[idx] = meta;
+        next[idx] = { ...next[idx], ...meta };
         return next;
       }
       return [...prev, meta];
