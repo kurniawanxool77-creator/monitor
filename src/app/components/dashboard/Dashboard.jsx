@@ -337,10 +337,10 @@ export function Dashboard() {
 
                   {/* Detail Section */}
                   {expandedKegiatanId === kg.id && (
-                    <div className="p-4 bg-slate-50 border-t border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="p-4 bg-slate-50 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
                       {/* Progress Timeline */}
-                      <div>
-                        <div className="flex items-center justify-between relative mb-2">
+                      <div className="mb-8">
+                        <div className="flex items-center justify-between relative">
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
                           <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `${kg.progress}%` }}></div>
                           
@@ -351,21 +351,20 @@ export function Dashboard() {
                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white ${isDone ? 'border-blue-500 text-blue-500' : 'border-gray-200 text-gray-400'}`}>
                                   {isDone ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{idx + 1}</span>}
                                 </div>
-                                <span className={`absolute top-10 text-[10px] whitespace-nowrap font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>
+                                <span className={`absolute top-9 text-[10px] whitespace-nowrap font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>
                                   {step.nama}
                                 </span>
                               </div>
                             );
                           })}
                         </div>
-                        <div className="h-6"></div> {/* Spacer for absolute text */}
                       </div>
 
                       {/* Keterangan Progress */}
-                      <div className="pt-2 border-t border-gray-100 mt-2">
-                        <p className="text-xs text-gray-700">
+                      <div className="pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-700 break-words whitespace-normal leading-relaxed">
                           <span className="font-bold">Ket : </span>
-                          <span className="italic text-gray-600">
+                          <span className={`${kg.catatanProgress ? 'font-medium' : 'italic'} text-gray-600`}>
                             {kg.catatanProgress ? kg.catatanProgress : 'Tidak ada keterangan'}
                           </span>
                         </p>
