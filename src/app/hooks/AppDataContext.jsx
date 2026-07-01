@@ -302,6 +302,7 @@ export function AppDataProvider({ children }) {
           sumberDana: meta?.sumberDana || 'Belum ditentukan',
           anggaranDiminta: meta?.anggaranDiminta || 0,
           isWadah: isInduk || false,
+          catatanProgress: meta?.catatanProgress || '',
         };
       });
   };

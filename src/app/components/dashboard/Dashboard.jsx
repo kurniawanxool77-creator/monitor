@@ -7,6 +7,10 @@ import {
   AlertCircle,
   Clock,
   TrendingUp,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  Check,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -55,6 +59,10 @@ export function Dashboard() {
   const subKegiatanList = getSubKegiatanList().filter(k => !k.isWadah);
 
   const [selectedBagian, setSelectedBagian] = useState(bagianList.length > 0 ? bagianList[0].nama : 'Sekretariat DPRD');
+  const [expandedKegiatanId, setExpandedKegiatanId] = useState(null);
+  const [catatanInputs, setCatatanInputs] = useState({});
+
+  const { updateSubKegiatanMetadata } = useAppData();
 
   const level1Data = dataUraian.filter(u => u.level === 1);
   let totalPagu = 0;
@@ -114,7 +122,11 @@ export function Dashboard() {
       tanggal: `${safeFormatDate(k.tanggalMulai)} - ${safeFormatDate(k.tanggalSelesai)}`,
       progress: k.progress,
       status: k.status,
-      step: k.step
+      step: k.step,
+      penanggungJawab: k.penanggungJawab,
+      sumberDana: k.sumberDana,
+      steps: k.steps,
+      catatanProgress: k.catatanProgress,
     });
     return acc;
   }, {});
@@ -269,40 +281,121 @@ export function Dashboard() {
               </div>
             ) : (
               subKegiatanBerjalan.map((kg) => (
-                <div key={kg.id} className="p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="text-sm font-medium text-gray-900 leading-tight">{kg.nama}</h4>
-                    <span className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium ${
-                      kg.status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' :
-                      kg.status === 'Terlambat' ? 'bg-red-100 text-red-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
-                      {kg.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${
-                          kg.progress >= 71 ? 'bg-emerald-500' :
-                          kg.progress >= 41 ? 'bg-amber-400' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${kg.progress}%` }}
-                      />
+                <div key={kg.id} className="rounded-lg border border-gray-100 hover:border-blue-200 transition-all overflow-hidden">
+                  <div 
+                    className="p-3 cursor-pointer hover:bg-blue-50/30 flex flex-col"
+                    onClick={() => {
+                      if (expandedKegiatanId === kg.id) {
+                        setExpandedKegiatanId(null);
+                      } else {
+                        setExpandedKegiatanId(kg.id);
+                        setCatatanInputs(prev => ({ ...prev, [kg.id]: kg.catatanProgress || '' }));
+                      }
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="text-sm font-medium text-gray-900 leading-tight flex-1">{kg.nama}</h4>
+                      <div className="flex items-center gap-2">
+                        <span className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium ${
+                          kg.status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' :
+                          kg.status === 'Terlambat' ? 'bg-red-100 text-red-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {kg.status}
+                        </span>
+                        {expandedKegiatanId === kg.id ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-xs font-bold min-w-[36px] text-right ${
-                      kg.progress >= 71 ? 'text-emerald-600' :
-                      kg.progress >= 41 ? 'text-amber-500' : 'text-red-600'
-                    }`}>{kg.progress}%</span>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            kg.progress >= 71 ? 'bg-emerald-500' :
+                            kg.progress >= 41 ? 'bg-amber-400' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${kg.progress}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-bold min-w-[36px] text-right ${
+                        kg.progress >= 71 ? 'text-emerald-600' :
+                        kg.progress >= 41 ? 'text-amber-500' : 'text-red-600'
+                      }`}>{kg.progress}%</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">{kg.tanggal}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        stepColors[kg.step] ?? 'bg-gray-200'
+                      } text-white`}>
+                        {kg.step}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{kg.tanggal}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      stepColors[kg.step] ?? 'bg-gray-200'
-                    } text-white`}>
-                      {kg.step}
-                    </span>
-                  </div>
+
+                  {/* Detail Section */}
+                  {expandedKegiatanId === kg.id && (
+                    <div className="p-4 bg-slate-50 border-t border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2">
+                      {/* Progress Timeline */}
+                      <div>
+                        <div className="flex items-center justify-between relative mb-2">
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `${kg.progress}%` }}></div>
+                          
+                          {kg.steps?.map((step, idx) => {
+                            const isDone = step.selesai;
+                            return (
+                              <div key={idx} className="relative z-10 flex flex-col items-center">
+                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white ${isDone ? 'border-blue-500 text-blue-500' : 'border-gray-200 text-gray-400'}`}>
+                                  {isDone ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{idx + 1}</span>}
+                                </div>
+                                <span className={`absolute top-10 text-[10px] whitespace-nowrap font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>
+                                  {step.nama}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="h-6"></div> {/* Spacer for absolute text */}
+                      </div>
+
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Penanggung Jawab</p>
+                          <p className="text-xs font-medium text-gray-900">{kg.penanggungJawab}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Sumber Dana</p>
+                          <p className="text-xs font-medium text-gray-900">{kg.sumberDana}</p>
+                        </div>
+                      </div>
+
+                      {/* Catatan Progress Form */}
+                      <div className="pt-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Tambah Catatan Progress</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Tulis catatan atau keterangan progress..."
+                            value={catatanInputs[kg.id] || ''}
+                            onChange={(e) => setCatatanInputs(prev => ({ ...prev, [kg.id]: e.target.value }))}
+                          />
+                          <button 
+                            className="bg-blue-300 hover:bg-blue-400 text-blue-800 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+                            onClick={() => {
+                              updateSubKegiatanMetadata(kg.id, { catatanProgress: catatanInputs[kg.id] });
+                            }}
+                          >
+                            <Save className="w-3.5 h-3.5" /> Simpan
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
