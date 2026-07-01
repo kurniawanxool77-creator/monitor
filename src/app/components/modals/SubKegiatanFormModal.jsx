@@ -421,7 +421,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               ) : (
                 <div className="flex gap-2">
                   <select value={form.kegiatanId} onChange={(e) => handleSelectChange('kegiatan', e.target.value)} disabled={mode === 'edit' || !form.bidangId}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
+                    className="flex-1 min-w-0 text-ellipsis overflow-hidden px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
                     <option value="">Pilih Kegiatan</option>
                     {listKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
                   </select>
@@ -545,7 +545,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 <>
                   <input list="anggota-list" value={form.penanggungJawab} onChange={(e) => setForm(f => ({ ...f, penanggungJawab: e.target.value }))}
                     placeholder="Cari / pilih penanggung jawab..."
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    className="flex-1 min-w-0 text-ellipsis overflow-hidden px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   <button type="button" onClick={() => setIsAddingMasterPj(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
                     + Baru
                   </button>
@@ -603,7 +603,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                     <>
                       <input list="anggota-list" type="text" value={anggota} onChange={(e) => updateAnggota(idx, e.target.value)}
                         placeholder={`Cari / pilih nama anggota ${idx + 1}...`}
-                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        className="flex-1 min-w-0 text-ellipsis overflow-hidden px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                       <button type="button" onClick={() => {
                         setAddingMasterIdx(idx);
                         setNewAnggotaData({ nama: '', jabatan: '' });
