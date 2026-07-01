@@ -565,23 +565,13 @@ export function AgendaSubKegiatan() {
                             </div>
 
                             {/* Keterangan & Catatan */}
-                            <div className="mt-8 pt-5 border-t border-blue-100 flex flex-col md:flex-row gap-4">
-                              <div className="flex-1 bg-white p-4 rounded-xl border border-blue-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                                <h5 className="text-[11px] font-bold text-gray-700 mb-2.5 flex items-center gap-1.5 uppercase tracking-wide">
-                                  <Info className="w-3.5 h-3.5 text-blue-500" /> Keterangan (Deskripsi)
-                                </h5>
-                                <p className="text-xs text-gray-600 leading-relaxed">
-                                  {subKegiatan.deskripsi || <span className="text-gray-400 italic">Tidak ada deskripsi.</span>}
-                                </p>
-                              </div>
-                              <div className="flex-1 bg-white p-4 rounded-xl border border-amber-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-                                <h5 className="text-[11px] font-bold text-gray-700 mb-2.5 flex items-center gap-1.5 uppercase tracking-wide">
-                                  <FileText className="w-3.5 h-3.5 text-amber-500" /> Catatan Progres
-                                </h5>
-                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
-                                  {subKegiatan.catatanProgress || <span className="text-gray-400 italic">Belum ada catatan progres.</span>}
-                                </p>
-                              </div>
+                            <div className="mt-6 pt-3 border-t border-gray-200">
+                              <p className="text-[11px] text-gray-700 break-words whitespace-normal leading-relaxed">
+                                <span className="font-bold">Ket : </span>
+                                <span className={`${subKegiatan.catatanProgress ? 'font-medium' : 'italic'} text-gray-600 whitespace-pre-line`}>
+                                  {subKegiatan.catatanProgress ? subKegiatan.catatanProgress : 'Tidak ada keterangan'}
+                                </span>
+                              </p>
                             </div>
                           </td>
                         </tr>
