@@ -391,7 +391,9 @@ export function UpdateProgressModal({
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Catatan Progress</label>
                   <div className="flex gap-2">
-                    <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)}
+                    <textarea value={catatan} 
+                      onChange={(e) => setCatatan(e.target.value)}
+                      onBlur={() => updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan })}
                       placeholder="Tulis catatan atau keterangan progress..."
                       rows={2}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
