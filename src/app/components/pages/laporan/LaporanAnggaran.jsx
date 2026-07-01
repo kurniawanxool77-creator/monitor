@@ -17,7 +17,12 @@ export function LaporanAnggaran() {
   const [filterBagian, setFilterBagian] = useState('semua');
   const [filterTanggal, setFilterTanggal] = useState('');
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
-  const targetBidangKode = filterBagian === 'semua' ? null : dataUraian.find(u => u.level === 1 && u.uraian === filterBagian)?.kode;
+  
+  const bidangList = dataUraian.filter(u => u.level === 1);
+  const targetBidangKode = filterBagian === 'semua' ? null : bidangList.find(u => u.uraian === filterBagian)?.kode;
+
+  const activeSdObj = sumberDanaList.find(sd => String(sd.id) === filterSumberDana);
+  const activeSdNama = activeSdObj?.nama || '';
 
   // Jika filter SD aktif, hitung pagu & realisasi hanya dari leaf yang memiliki SD tersebut
   const getFilteredTotals = (kode) => {
