@@ -361,38 +361,14 @@ export function Dashboard() {
                         <div className="h-6"></div> {/* Spacer for absolute text */}
                       </div>
 
-                      {/* Info Grid */}
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Penanggung Jawab</p>
-                          <p className="text-xs font-medium text-gray-900">{kg.penanggungJawab}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Sumber Dana</p>
-                          <p className="text-xs font-medium text-gray-900">{kg.sumberDana}</p>
-                        </div>
-                      </div>
-
-                      {/* Catatan Progress Form */}
-                      <div className="pt-2">
-                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Tambah Catatan Progress</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Tulis catatan atau keterangan progress..."
-                            value={catatanInputs[kg.id] || ''}
-                            onChange={(e) => setCatatanInputs(prev => ({ ...prev, [kg.id]: e.target.value }))}
-                          />
-                          <button 
-                            className="bg-blue-300 hover:bg-blue-400 text-blue-800 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
-                            onClick={() => {
-                              updateSubKegiatanMetadata(kg.id, { catatanProgress: catatanInputs[kg.id] });
-                            }}
-                          >
-                            <Save className="w-3.5 h-3.5" /> Simpan
-                          </button>
-                        </div>
+                      {/* Keterangan Progress */}
+                      <div className="pt-2 border-t border-gray-100 mt-2">
+                        <p className="text-xs text-gray-700">
+                          <span className="font-bold">Ket : </span>
+                          <span className="italic text-gray-600">
+                            {kg.catatanProgress ? kg.catatanProgress : 'Tidak ada keterangan'}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   )}
