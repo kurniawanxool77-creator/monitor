@@ -61,7 +61,7 @@ export function UpdateProgressModal({
       });
     setLogs(relevantLogs);
   }, [activityLogs, subKegiatan.nama, subKegiatan.id]);
-  const [catatan, setCatatan] = useState('');
+  const [catatan, setCatatan] = useState(subKegiatan.catatanProgress || '');
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -152,9 +152,7 @@ export function UpdateProgressModal({
   }
 
   function handleSaveCatatan() {
-    if (!catatan.trim()) return;
-    addLog(`Catatan: "${catatan}"`);
-    setCatatan('');
+    updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan });
   }
 
   function handleSaveRealisasi() {
@@ -387,18 +385,45 @@ export function UpdateProgressModal({
                 </div>
               )}
 
-              {/* Catatan */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Tambah Catatan Progress</label>
-                <div className="flex gap-2">
-                  <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)}
-                    placeholder="Tulis catatan atau keterangan progress..."
-                    rows={2}
-                    className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
-                  <button onClick={handleSaveCatatan} disabled={!catatan.trim()}
-                    className="self-end flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <Save className="w-4 h-4" /> Simpan
-                  </button>
+              {/* Catatan & Info Detail */}
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Catatan Progress</label>
+                  <div className="flex gap-2">
+                    <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)}
+                      placeholder="Tulis catatan atau keterangan progress..."
+                      rows={2}
+                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
+                    <button onClick={handleSaveCatatan}
+                      className="self-end flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+                      <Save className="w-4 h-4" /> Simpan
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Penanggung Jawab</p>
+                    <p className="text-sm font-semibold text-gray-900">{subKegiatan.penanggungJawab}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Anggota Tim</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {subKegiatan.anggota?.length > 0 ? subKegiatan.anggota.join(', ') : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Target Pagu</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatRp(subKegiatan.paguAnggaran)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Realisasi Anggaran</p>
+                    <p className="text-sm font-semibold text-blue-700">{formatRp(subKegiatan.realisasiAnggaran)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Realisasi Fisik</p>
+                    <p className="text-sm font-semibold text-emerald-600">{subKegiatan.progress}%</p>
+                  </div>
                 </div>
               </div>
 

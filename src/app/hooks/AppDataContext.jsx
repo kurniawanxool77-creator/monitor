@@ -303,6 +303,7 @@ export function AppDataProvider({ children }) {
           anggaranDiminta: meta?.anggaranDiminta || 0,
           isWadah: isInduk || false,
           catatanProgress: meta?.catatanProgress || '',
+          anggota: meta?.anggota || [],
         };
       });
   };
