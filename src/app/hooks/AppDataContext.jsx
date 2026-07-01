@@ -3,8 +3,8 @@ import { uraianAnggaran, subKegiatanList, sumberDanaList as mockSumberDana, angg
 import { generateComplexDummyData } from '../lib/dummyGenerator';
 import { api, sumberDanaApi, userApi, API_URL } from '../lib/api';
 // Key for local storage
-const STORAGE_KEY = 'master_uraian_anggaran_v5';
-const KEGIATAN_META_KEY = 'kegiatan_metadata_v4';
+const STORAGE_KEY = 'master_uraian_anggaran_v6';
+const KEGIATAN_META_KEY = 'kegiatan_metadata_v5';
 
 export const AppDataContext = createContext(null);
 
@@ -20,7 +20,7 @@ export function AppDataProvider({ children }) {
   // paguBidangSumberDana: { [bidangKode]: { [sumberDanaId]: jumlahPagu } }
   const [paguBidangSumberDana, setPaguBidangSumberDana] = useState({});
 
-  const ANGGOTA_KEY = 'master_anggota_v2';
+  const ANGGOTA_KEY = 'master_anggota_v3';
   const [anggotaList, setAnggotaList] = useState(() => {
     const saved = localStorage.getItem(ANGGOTA_KEY);
     if (saved) { try { return JSON.parse(saved); } catch { } }
@@ -68,16 +68,15 @@ export function AppDataProvider({ children }) {
         console.error("Failed to parse local storage", e);
       }
     } else {
-      // Generate complex dummy data if no local storage found
-      const dummy = generateComplexDummyData();
-      setAllDataUraian(dummy.uraianAnggaran);
-      setSubKegiatanMeta(dummy.subKegiatanMeta);
-      setSumberDanaList(dummy.sumberDanaList);
-      setAnggotaList(dummy.anggotaList);
-      setPaguSumberDana(dummy.paguSumberDana);
-      setPaguBidangSumberDana(dummy.paguBidangSumberDana);
+      // Initialize with completely empty data
+      setAllDataUraian([]);
+      setSubKegiatanMeta([]);
+      setSumberDanaList([]);
+      setAnggotaList([]);
+      setPaguSumberDana({});
+      setPaguBidangSumberDana({});
       setAllActivityLogs([
-        { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data dummy tergenerate' }
+        { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data kosong' }
       ]);
     }
 
