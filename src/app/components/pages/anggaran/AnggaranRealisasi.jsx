@@ -452,35 +452,7 @@ export function AnggaranRealisasi() {
                   </div>
                 ))}
                 
-                {newSdMode ? (
-                  <div className="mt-4 p-4 border border-blue-200 bg-blue-50/50 rounded-xl">
-                    <label className="block text-sm font-bold text-gray-800 mb-1.5">Nama Sumber Dana Baru</label>
-                    <div className="flex gap-2">
-                      <input type="text" autoFocus value={newSdValue} onChange={(e) => setNewSdValue(e.target.value)}
-                        placeholder="Contoh: DAU, DAK, BOS..."
-                        className="flex-1 px-4 py-2.5 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" />
-                      <button onClick={async () => {
-                        if (newSdValue.trim()) {
-                          try {
-                            const newSd = await addSumberDana(newSdValue.trim());
-                            setPaguInputPerSD(prev => ({ ...prev, [newSd.id]: '' }));
-                            setNewSdMode(false);
-                            setNewSdValue('');
-                          } catch (err) {
-                            alert("Gagal menambahkan sumber dana");
-                          }
-                        }
-                      }} className="px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Simpan</button>
-                      <button onClick={() => { setNewSdMode(false); setNewSdValue(''); }}
-                        className="px-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300">Batal</button>
-                    </div>
-                  </div>
-                ) : (
-                  <button onClick={() => setNewSdMode(true)}
-                    className="mt-2 w-full py-2.5 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl text-sm font-bold hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
-                    <Plus className="w-4 h-4" /> Tambah Sumber Dana Baru
-                  </button>
-                )}
+                {/* Fitur tambah sumber dana baru dihapus dari modal ini */}
               </div>
               {/* Total auto-sum */}
               <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
