@@ -482,9 +482,24 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
                               ) : (
                                 u.level === 2 ? <span className="w-5 h-5 flex-shrink-0" /> : null
                               )}
-                              <span className={u.level === 2 ? "font-bold text-slate-800" : "font-normal text-slate-700"}>
-                                {u.uraian}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className={u.level === 2 ? "font-bold text-slate-800" : "font-normal text-slate-700"}>
+                                  {u.uraian}
+                                </span>
+                                {u.level === 3 && (
+                                  <div className="text-[11px] text-slate-500 mt-1.5 flex flex-wrap gap-2 leading-relaxed">
+                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                      <span className="font-semibold text-slate-600">SD:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.sumberDana || '-'}
+                                    </span>
+                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                      <span className="font-semibold text-slate-600">PJ:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.penanggungJawab || '-'}
+                                    </span>
+                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                      <span className="font-semibold text-slate-600">Waktu:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalMulai || '-'} s/d {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalSelesai || '-'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </>
