@@ -348,30 +348,33 @@ export function AgendaSubKegiatan() {
                 });
 
                 const sortedDataToRender = [...enrichedDataToRender].sort((a, b) => {
-                  const aParent = a.level === 1 ? a.kode : a.kode.split('.').slice(0, -1).join('.');
-                  const bParent = b.level === 1 ? b.kode : b.kode.split('.').slice(0, -1).join('.');
+                  const aParts = a.kode.split('.').map(Number);
+                  const bParts = b.kode.split('.').map(Number);
+                  const minLen = Math.min(aParts.length, bParts.length);
 
-                  if (aParent !== bParent) {
-                     if (b.kode.startsWith(a.kode + '.')) return -1;
-                     if (a.kode.startsWith(b.kode + '.')) return 1;
-                     return aParent.localeCompare(bParent);
+                  for (let i = 0; i < minLen; i++) {
+                    if (aParts[i] !== bParts[i]) {
+                      const aAncestorKode = aParts.slice(0, i + 1).join('.');
+                      const bAncestorKode = bParts.slice(0, i + 1).join('.');
+                      const aNode = enrichedDataToRender.find(x => x.kode === aAncestorKode);
+                      const bNode = enrichedDataToRender.find(x => x.kode === bAncestorKode);
+
+                      if (aNode && bNode) {
+                        const getUrgency = (status) => {
+                          if (status === 'Terlambat') return 1;
+                          if (status === 'Belum Mulai') return 2;
+                          if (status === 'Berjalan') return 3;
+                          return 4;
+                        };
+                        const uA = getUrgency(aNode.computedStatus);
+                        const uB = getUrgency(bNode.computedStatus);
+                        if (uA !== uB) return uA - uB;
+                      }
+
+                      return aParts[i] - bParts[i];
+                    }
                   }
-
-                  if (a.level === 1 && b.level > 1) return -1;
-                  if (b.level === 1 && a.level > 1) return 1;
-
-                  const getUrgency = (status) => {
-                    if (status === 'Terlambat') return 1;
-                    if (status === 'Belum Mulai') return 2;
-                    if (status === 'Berjalan') return 3;
-                    return 4;
-                  };
-
-                  const uA = getUrgency(a.computedStatus);
-                  const uB = getUrgency(b.computedStatus);
-
-                  if (uA !== uB) return uA - uB;
-                  return a.kode.localeCompare(b.kode);
+                  return aParts.length - bParts.length;
                 });
 
                 let kegiatanCount = 0;
