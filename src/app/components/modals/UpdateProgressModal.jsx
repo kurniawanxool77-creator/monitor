@@ -394,11 +394,7 @@ export function UpdateProgressModal({
                     <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)}
                       placeholder="Tulis catatan atau keterangan progress..."
                       rows={2}
-                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
-                    <button onClick={handleSaveCatatan}
-                      className="self-end px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                      Simpan
-                    </button>
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
                   </div>
                 </div>
 
@@ -502,9 +498,12 @@ export function UpdateProgressModal({
 
         {/* ── Footer ── */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <button onClick={onClose}
+          <button onClick={() => {
+              updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan });
+              onClose();
+            }}
             className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all">
-            <Check className="w-4 h-4" strokeWidth={3} /> Selesai & Tutup
+            <Save className="w-4 h-4" strokeWidth={3} /> Simpan
           </button>
         </div>
       </div>
