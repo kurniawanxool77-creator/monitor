@@ -105,7 +105,7 @@ export function KalenderSubKegiatan() {
   for (let day = 1; day <= daysInMonth; day++) {
     const events = getEventsForDate(day);
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const isToday = day === 12 && currentMonth === 5 && currentYear === 2025;
+    const isToday = day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
     const isSelected = selectedDate === dateStr;
     const hasEvents = events.length > 0;
 

@@ -178,7 +178,7 @@ export function Login() {
 
       {/* Footer */}
       <div className="absolute bottom-6 text-center w-full text-gray-400 text-xs font-medium px-4">
-        © 2025 Sekretariat DPRD Provinsi Jawa Tengah • Dashboard Monitoring & Pelaporan
+        &copy; {new Date().getFullYear()} Sekretariat DPRD Provinsi Jawa Tengah &bull; Dashboard Monitoring & Pelaporan
       </div>
     </div>
   );

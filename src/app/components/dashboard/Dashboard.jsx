@@ -405,7 +405,7 @@ export function Dashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-bold text-gray-900">KEGIATAN BERDASARKAN JENIS</h2>
-            <span className="text-xs text-gray-500">Tahun 2025</span>
+            <span className="text-xs text-gray-500">Tahun {new Date().getFullYear()}</span>
           </div>
           <div className="flex flex-col items-center">
             <div className="relative w-44 h-44">
