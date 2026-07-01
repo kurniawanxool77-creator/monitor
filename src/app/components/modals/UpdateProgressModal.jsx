@@ -61,7 +61,7 @@ export function UpdateProgressModal({
       });
     setLogs(relevantLogs);
   }, [activityLogs, subKegiatan.nama, subKegiatan.id]);
-  const [catatan, setCatatan] = useState(subKegiatan.catatanProgress || '');
+  const [catatan, setCatatan] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -153,6 +153,7 @@ export function UpdateProgressModal({
 
   function handleSaveCatatan() {
     updateSubKegiatanMetadata(subKegiatan.id, { catatanProgress: catatan });
+    setCatatan('');
   }
 
   function handleSaveRealisasi() {
