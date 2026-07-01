@@ -20,6 +20,7 @@ import {
   TrendingUp,
   ListChecks,
   Activity,
+  Wallet,
 } from 'lucide-react';
 
 const menuItems = [
@@ -55,6 +56,7 @@ const menuItems = [
     items: [
       { icon: BarChart3, label: 'Laporan Kegiatan', path: '/laporan-kegiatan' },
       { icon: FileText, label: 'Laporan Anggaran', path: '/laporan-anggaran' },
+      { icon: Wallet, label: 'Laporan Pendapatan', path: '/laporan-pendapatan' },
     ],
   },
   {

@@ -9,6 +9,7 @@ import { ProgressSubKegiatan } from "./components/pages/progress/ProgressSubKegi
 import { AnggaranRealisasi } from "./components/pages/anggaran/AnggaranRealisasi";
 import { LaporanSubKegiatan } from "./components/pages/laporan/LaporanSubKegiatan";
 import { LaporanAnggaran } from "./components/pages/laporan/LaporanAnggaran";
+import { LaporanPendapatan } from "./components/pages/laporan/LaporanPendapatan";
 import { RoleAkses } from "./components/pages/roleakses/RoleAkses";
 import { MasterData } from "./components/pages/masterdata/MasterData";
 import { DetailSubKegiatan } from "./components/pages/detail/DetailSubKegiatan";
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: "anggaran/realisasi", Component: RealisasiPage },
       { path: "laporan-kegiatan", Component: LaporanSubKegiatan },
       { path: "laporan-anggaran", Component: LaporanAnggaran },
+      { path: "laporan-pendapatan", Component: LaporanPendapatan },
       { path: "role-akses", Component: RoleAkses },
       { path: "master-data", Component: MasterData },
       { path: "log-aktifitas", Component: LogAktifitas },
