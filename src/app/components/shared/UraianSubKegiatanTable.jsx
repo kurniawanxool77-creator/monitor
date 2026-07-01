@@ -350,67 +350,7 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
         })}
       </div>
 
-      {/* ── DETAIL ANGGARAN BIDANG (PER SUMBER DANA) ── */}
-      {selectedBidang && (() => {
-        const b = bidangList.find(x => x.kode === selectedBidang);
-        if (!b) return null;
-        
-        const sdPagu = paguBidangSumberDana[selectedBidang] || {};
-        const activeSd = sumberDanaList.filter(sd => sd.aktif);
-        
-        const descendants = uraianAnggaran.filter(u => u.kode.startsWith(selectedBidang + '.') && u.level > 1);
-        const leafDescendants = descendants.filter(u => !descendants.some(d => d.kode.startsWith(u.kode + '.') && d.kode !== u.kode));
-        
-        if (activeSd.length === 0) return null;
-
-        return (
-          <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm animate-in fade-in slide-in-from-top-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-blue-500" />
-              Detail Anggaran per Sumber Dana: {b.uraian}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {activeSd.map(sd => {
-                const target = sdPagu[sd.id] || 0;
-                const realisasi = leafDescendants.reduce((acc, u) => {
-                  const meta = subKegiatanMeta.find(m => m.id === u.kode);
-                  if (meta?.sumberDana === sd.nama) return acc + (u.realisasi || 0);
-                  return acc;
-                }, 0);
-                const sisa = target - realisasi;
-                const pct = target > 0 ? Math.round((realisasi / target) * 100) : 0;
-                
-                return (
-                  <div key={sd.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 truncate" title={sd.nama}>
-                      {sd.nama}
-                    </div>
-                    <div className="text-lg font-black text-slate-800 mb-3">
-                      {formatRp(target, true)}
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-500 font-medium">Realisasi</span>
-                        <span className="text-slate-700 font-bold">{formatRp(realisasi, true)}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-500 font-medium">Sisa</span>
-                        <span className={`font-bold ${sisa < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatRp(sisa, true)}</span>
-                      </div>
-                    </div>
-                    <div className="mt-3 w-full bg-slate-200 rounded-full h-1.5">
-                      <div 
-                        className={`h-1.5 rounded-full transition-all duration-500 ${pct > 100 ? 'bg-red-500' : pct >= 60 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+      {/* ── DETAIL ANGGARAN BIDANG (PER SUMBER DANA) Dihapus sesuai permintaan ── */}
 
       {/* ── BARIS FILTER & TOMBOL ── */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-4 rounded-xl border border-slate-200/60 shadow-sm">

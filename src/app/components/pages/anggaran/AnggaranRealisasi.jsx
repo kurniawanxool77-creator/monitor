@@ -256,66 +256,7 @@ export function AnggaranRealisasi() {
         </button>
       </div>
 
-      {/* Distribusi Pagu Per Sumber Dana */}
-      {activeCard && activeCard !== 'PERSENTASE' && (() => {
-        const activeSumberDanaList = sumberDanaList.filter(sd => sd.aktif);
-        
-        return (
-      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-800">
-            {activeCard === 'PAGU' ? 'Distribusi Pagu Per Sumber Dana' : activeCard === 'REALISASI' ? 'Distribusi Realisasi Per Sumber Dana' : 'Distribusi Sisa Anggaran Per Sumber Dana'}
-            <span className="text-gray-500 font-medium ml-1">({selectedYear})</span>
-          </h3>
-          <button onClick={() => setActiveCard(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
-        </div>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {activeSumberDanaList.length === 0 && (
-            <div className="text-sm text-gray-500 italic p-4">Belum ada sumber dana aktif</div>
-          )}
-          {activeSumberDanaList.map(sd => {
-            const sdPagu = (paguSumberDana[selectedYear] || {})[sd.id] || 0;
-            
-            const sdRealisasi = leafSubKegiatans
-               .filter(k => k.sumberDana === sd.nama)
-               .reduce((sum, k) => sum + (k.realized || 0), 0);
-               
-            const sdSisa = Math.max(0, sdPagu - sdRealisasi);
-            const sdPct = sdPagu > 0 ? ((sdRealisasi / sdPagu) * 100).toFixed(1) : '0';
-            
-            const displayedTotal = activeCard === 'PAGU' ? sdPagu : activeCard === 'REALISASI' ? sdRealisasi : sdSisa;
-            
-            return (
-              <div key={sd.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 min-w-[240px] flex-shrink-0 flex flex-col">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{sd.nama}</div>
-                <div className={`text-xl font-extrabold mb-3 ${activeCard === 'PAGU' ? 'text-blue-600' : activeCard === 'REALISASI' ? 'text-emerald-600' : 'text-amber-500'}`}>
-                  {formatRp(displayedTotal, true)}
-                </div>
-                
-                <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">
-                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
-                    <span>Pagu:</span>
-                    <span className="font-bold text-slate-700">{formatRp(sdPagu, true)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
-                    <span>Realisasi:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-emerald-600">{formatRp(sdRealisasi, true)}</span>
-                      <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold">{sdPct}%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-[11px] font-medium text-slate-600">
-                    <span>Sisa:</span>
-                    <span className="font-bold text-amber-600">{formatRp(sdSisa, true)}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-        );
-      })()}
+      {/* Distribusi Pagu Per Sumber Dana (Dihapus sesuai permintaan) */}
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
