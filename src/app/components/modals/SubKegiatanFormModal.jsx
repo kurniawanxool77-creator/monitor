@@ -400,7 +400,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
 
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Bidang <span className="text-red-500">*</span></label>
               <select value={form.bidangId} onChange={(e) => handleBidangChange(e.target.value)} disabled={mode === 'edit'}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -409,7 +409,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               </select>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kegiatan <span className="text-red-500">*</span></label>
               {newInputMode === 'kegiatan' ? (
                 <div className="flex gap-2">
