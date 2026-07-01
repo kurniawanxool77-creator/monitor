@@ -411,9 +411,11 @@ export function AgendaSubKegiatan() {
                                 </div>
                                 <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
                                   <span className="font-semibold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded w-fit text-[10px] mb-1">
-                                    {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
+                                    Sub Kegiatan: Pelaksanaan {u.uraian}
                                   </span>
-                                  <span className="font-semibold text-gray-600">{existingSub?.penanggungJawab || 'Belum ada PJ'}</span>
+                                  <span className="font-semibold text-gray-600">
+                                    PJ: {existingSub?.penanggungJawab || 'Belum ada PJ'} &bull; Bidang: {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
+                                  </span>
                                 </div>
                               </div>
                             )}
