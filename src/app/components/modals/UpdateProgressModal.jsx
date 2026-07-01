@@ -395,8 +395,8 @@ export function UpdateProgressModal({
                       rows={2}
                       className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
                     <button onClick={handleSaveCatatan}
-                      className="self-end flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                      <Save className="w-4 h-4" /> Simpan
+                      className="self-end px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+                      Simpan
                     </button>
                   </div>
                 </div>
