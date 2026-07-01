@@ -3,26 +3,56 @@ import { FileText, Download, Eye, Share2 } from 'lucide-react';
 import { useAppData } from "../../../hooks/AppDataContext";
 
 export function LaporanSubKegiatan() {
-  const { getSubKegiatanList, getBagianList } = useAppData();
-  const subKegiatanList = getSubKegiatanList();
-  const bagianList = getBagianList();
-
+  const { dataUraian, subKegiatanMeta } = useAppData();
+  
   const [filterQuery, setFilterQuery] = useState('');
   const [filterBagian, setFilterBagian] = useState('semua');
   const [filterTanggal, setFilterTanggal] = useState('');
   const [filterStatus, setFilterStatus] = useState('semua');
 
-  const filteredSubKegiatan = subKegiatanList.filter(k => !k.isWadah).filter(k => {
-    if (filterQuery && !k.nama.toLowerCase().includes(filterQuery.toLowerCase())) return false;
-    if (filterBagian !== 'semua' && !k.bidang.toLowerCase().includes(filterBagian.toLowerCase())) return false;
-    if (filterTanggal && !k.tanggalMulai.startsWith(filterTanggal)) return false;
-    if (filterStatus !== 'semua' && k.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
-    return true;
+  const bagianList = dataUraian.filter(u => u.level === 1).map(u => ({ id: u.kode, nama: u.uraian }));
+
+  const targetBidangKode = filterBagian === 'semua' ? null : dataUraian.find(u => u.level === 1 && u.uraian === filterBagian)?.kode;
+
+  // Sorting hirarkis 3 level
+  const sortedData = [...dataUraian].sort((a, b) => {
+    const aParts = a.kode.split('.').map(Number);
+    const bParts = b.kode.split('.').map(Number);
+    const minLen = Math.min(aParts.length, bParts.length);
+    for (let i = 0; i < minLen; i++) {
+      if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i];
+    }
+    return aParts.length - bParts.length;
   });
 
-  const total = filteredSubKegiatan.length;
-  const selesai = filteredSubKegiatan.filter(k => k.status === 'Selesai').length;
-  const berjalan = filteredSubKegiatan.filter(k => k.status === 'Berjalan').length;
+  const rowData = sortedData.map(u => {
+    const meta = subKegiatanMeta.find(m => m.id === u.kode);
+    return {
+      ...u,
+      tanggalMulai: meta?.tanggalMulai || '-',
+      tanggalSelesai: meta?.tanggalSelesai || '-',
+      status: meta?.status || '-',
+      isWadah: meta?.isWadah !== false // default true for parents
+    };
+  }).filter(k => {
+    if (targetBidangKode && !k.kode.startsWith(targetBidangKode + '.') && k.kode !== targetBidangKode) return false;
+    
+    // Untuk leaf (Sub Kegiatan), terapkan filter status dan query
+    if (!k.isWadah || k.level === 3) {
+       if (filterQuery && !k.uraian.toLowerCase().includes(filterQuery.toLowerCase())) return false;
+       if (filterTanggal && !k.tanggalMulai.startsWith(filterTanggal)) return false;
+       if (filterStatus !== 'semua' && k.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
+    }
+    // Note: If we aggressively filter out leaves, parents might be left dangling without children. 
+    // In a simple approach, we just show all parents matching Bidang, and hide leaves that don't match.
+    return true; 
+  });
+
+  // Calculate stats from leaves only
+  const leaves = rowData.filter(r => r.level === 3 || !r.isWadah);
+  const total = leaves.length;
+  const selesai = leaves.filter(k => k.status === 'Selesai').length;
+  const berjalan = leaves.filter(k => k.status === 'Berjalan').length;
 
   return (
     <div className="space-y-6">
@@ -112,22 +142,31 @@ export function LaporanSubKegiatan() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="text-left py-2 px-3 border">No</th>
-                    <th className="text-left py-2 px-3 border">Nama Kegiatan</th>
-                    <th className="text-left py-2 px-3 border">Tanggal Mulai</th>
-                    <th className="text-left py-2 px-3 border">Status</th>
+                    <th className="text-left py-2 px-3 border font-semibold text-slate-500 uppercase text-[11px] tracking-wider">Uraian / Nama Kegiatan</th>
+                    <th className="text-left py-2 px-3 border font-semibold text-slate-500 uppercase text-[11px] tracking-wider">Tanggal Mulai</th>
+                    <th className="text-left py-2 px-3 border font-semibold text-slate-500 uppercase text-[11px] tracking-wider">Tanggal Selesai</th>
+                    <th className="text-left py-2 px-3 border font-semibold text-slate-500 uppercase text-[11px] tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSubKegiatan.length > 0 ? (
-                    filteredSubKegiatan.map((keg, idx) => (
-                      <tr key={keg.id}>
-                        <td className="py-2 px-3 border">{idx + 1}</td>
-                        <td className="py-2 px-3 border">{keg.nama}</td>
-                        <td className="py-2 px-3 border">{keg.tanggalMulai}</td>
-                        <td className="py-2 px-3 border">{keg.status}</td>
-                      </tr>
-                    ))
+                  {rowData.length > 0 ? (
+                    rowData.map((keg) => {
+                      const indent = (keg.level - 1) * 20;
+                      return (
+                        <tr key={keg.kode} className={`${keg.level === 1 ? 'bg-blue-50/40 font-bold' : keg.level === 2 ? 'bg-slate-50/50 font-semibold' : ''}`}>
+                          <td className="py-2.5 px-3 border text-[13px] text-gray-700" style={{ paddingLeft: `${indent + 12}px` }}>{keg.uraian}</td>
+                          <td className="py-2.5 px-3 border text-[13px] text-gray-600">{keg.level === 3 ? keg.tanggalMulai : '-'}</td>
+                          <td className="py-2.5 px-3 border text-[13px] text-gray-600">{keg.level === 3 ? keg.tanggalSelesai : '-'}</td>
+                          <td className="py-2.5 px-3 border text-[13px] font-medium">
+                            {keg.level === 3 ? (
+                              <span className={`${keg.status === 'Selesai' ? 'text-emerald-600' : keg.status === 'Terlambat' ? 'text-red-600' : 'text-blue-600'}`}>
+                                {keg.status}
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
                       <td colSpan={4} className="py-4 text-center text-gray-500 border">Tidak ada kegiatan yang sesuai dengan filter.</td>

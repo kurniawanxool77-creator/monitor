@@ -17,28 +17,16 @@ export function LaporanAnggaran() {
   const [filterBagian, setFilterBagian] = useState('semua');
   const [filterTanggal, setFilterTanggal] = useState('');
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
-  const [filterLevel, setFilterLevel] = useState('perBidang');
+  const targetBidangKode = filterBagian === 'semua' ? null : dataUraian.find(u => u.level === 1 && u.uraian === filterBagian)?.kode;
 
-  const bidangList = dataUraian.filter(u => u.level === 1);
-
-  // Cari nama SD yang dipilih
-  const activeSdObj = sumberDanaList.find(sd => String(sd.id) === filterSumberDana);
-  const activeSdNama = activeSdObj?.nama || '';
-
-  // Filter bidang berdasarkan Bagian
-  const filteredBidang = filterBagian === 'semua'
-    ? bidangList
-    : bidangList.filter(b => b.uraian === filterBagian);
-
-  // Jika filter SD aktif, hitung pagu & realisasi hanya dari kegiatan dengan SD tersebut
-  const getFilteredTotalsForBidang = (bidangKode) => {
+  // Jika filter SD aktif, hitung pagu & realisasi hanya dari leaf yang memiliki SD tersebut
+  const getFilteredTotals = (kode) => {
     if (filterSumberDana === 'semua') {
-      const b = dataUraian.find(u => u.kode === bidangKode);
+      const b = dataUraian.find(u => u.kode === kode);
       return { target: b?.target || 0, realisasi: b?.realisasi || 0 };
     }
-    // Sum dari leaf subKegiatan yang cocok SD
     const leaves = subKegiatanMeta.filter(m =>
-      m.id.startsWith(bidangKode + '.') && m.sumberDana === activeSdNama && !m.isWadah
+      (m.id.startsWith(kode + '.') || m.id === kode) && m.sumberDana === activeSdNama && !m.isWadah
     );
     const target = leaves.reduce((sum, m) => {
       const u = dataUraian.find(x => x.kode === m.id);
@@ -51,15 +39,26 @@ export function LaporanAnggaran() {
     return { target, realisasi };
   };
 
-  const bidangRows = filteredBidang
-    .map(b => {
-      const totals = getFilteredTotalsForBidang(b.kode);
-      return { ...b, ...totals };
-    })
-    .filter(b => filterSumberDana === 'semua' || b.target > 0 || b.realisasi > 0);
+  const sortedData = [...dataUraian].sort((a, b) => {
+    const aParts = a.kode.split('.').map(Number);
+    const bParts = b.kode.split('.').map(Number);
+    const minLen = Math.min(aParts.length, bParts.length);
+    for (let i = 0; i < minLen; i++) {
+      if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i];
+    }
+    return aParts.length - bParts.length;
+  });
 
-  const totalPagu = bidangRows.reduce((sum, b) => sum + b.target, 0);
-  const totalRealisasi = bidangRows.reduce((sum, b) => sum + b.realisasi, 0);
+  const rowData = sortedData
+    .filter(u => targetBidangKode ? (u.kode.startsWith(targetBidangKode + '.') || u.kode === targetBidangKode) : true)
+    .map(u => {
+      const totals = getFilteredTotals(u.kode);
+      return { ...u, ...totals };
+    })
+    .filter(u => filterSumberDana === 'semua' ? true : (u.target > 0 || u.realisasi > 0));
+
+  const totalPagu = rowData.filter(r => r.level === 1).reduce((sum, b) => sum + b.target, 0);
+  const totalRealisasi = rowData.filter(r => r.level === 1).reduce((sum, b) => sum + b.realisasi, 0);
   const totalSisa = totalPagu - totalRealisasi;
   const pctSerapan = totalPagu > 0 ? ((totalRealisasi / totalPagu) * 100).toFixed(2) : '0.00';
 
@@ -99,14 +98,7 @@ export function LaporanAnggaran() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
             <input type="date" value={filterTanggal} onChange={e => setFilterTanggal(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-700" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Level</label>
-            <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="perBidang">Per Bidang</option>
-              <option value="perKegiatan">Per Kegiatan</option>
-            </select>
-          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Sumber Dana</label>
             <select value={filterSumberDana} onChange={(e) => setFilterSumberDana(e.target.value)}
@@ -191,17 +183,18 @@ export function LaporanAnggaran() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bidangRows.length > 0 ? (
-                    bidangRows.map(b => {
+                  {rowData.length > 0 ? (
+                    rowData.map(b => {
                       const sisa = b.target - b.realisasi;
                       const pct = b.target > 0 ? Math.round((b.realisasi / b.target) * 100) : 0;
+                      const indent = (b.level - 1) * 20;
                       return (
-                        <tr key={b.kode}>
-                          <td className="py-2.5 px-3 border text-[13px] text-gray-700">{b.uraian}</td>
-                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-slate-700">{formatRp(b.target)}</td>
-                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-emerald-700">{formatRp(b.realisasi)}</td>
-                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-blue-700">{formatRp(sisa)}</td>
-                          <td className="py-2.5 px-3 border text-center text-[13px] font-medium text-slate-600">{pct}%</td>
+                        <tr key={b.kode} className={`${b.level === 1 ? 'bg-blue-50/40 font-bold' : b.level === 2 ? 'bg-slate-50/50 font-semibold' : ''}`}>
+                          <td className="py-2.5 px-3 border text-[13px] text-gray-700" style={{ paddingLeft: `${indent + 12}px` }}>{b.uraian}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-slate-700">{b.target > 0 ? formatRp(b.target) : '-'}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-emerald-700">{b.realisasi > 0 ? formatRp(b.realisasi) : '-'}</td>
+                          <td className="py-2.5 px-3 border text-right text-[13px] font-medium text-blue-700">{sisa !== 0 ? formatRp(sisa) : '-'}</td>
+                          <td className="py-2.5 px-3 border text-center text-[13px] font-medium text-slate-600">{b.target > 0 ? `${pct}%` : '-'}</td>
                         </tr>
                       );
                     })
