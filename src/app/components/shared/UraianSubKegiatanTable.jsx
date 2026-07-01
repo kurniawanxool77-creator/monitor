@@ -489,13 +489,13 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
                                 {u.level === 3 && (
                                   <div className="text-[11px] text-slate-500 mt-1.5 flex flex-wrap gap-2 leading-relaxed">
                                     <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                                      <span className="font-semibold text-slate-600">SD:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.sumberDana || '-'}
+                                      {subKegiatanMeta.find(m => m.id === u.kode)?.sumberDana || '-'}
                                     </span>
                                     <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                                      <span className="font-semibold text-slate-600">PJ:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.penanggungJawab || '-'}
+                                      {subKegiatanMeta.find(m => m.id === u.kode)?.penanggungJawab || '-'}
                                     </span>
                                     <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                                      <span className="font-semibold text-slate-600">Waktu:</span> {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalMulai || '-'} s/d {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalSelesai || '-'}
+                                      {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalMulai || '-'} s/d {subKegiatanMeta.find(m => m.id === u.kode)?.tanggalSelesai || '-'}
                                     </span>
                                   </div>
                                 )}
