@@ -391,7 +391,7 @@ export function AgendaSubKegiatan() {
                           }`}
                       >
                         <td className="py-3 px-4 text-xs font-mono text-slate-500 text-center whitespace-nowrap">
-                          {u.level === 1 ? '' : ++kegiatanCount}
+                          {u.level === 1 || u.level === 2 ? '' : ++kegiatanCount}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2" style={{ paddingLeft: `${(u.level - 1) * 20}px` }}>
@@ -402,17 +402,16 @@ export function AgendaSubKegiatan() {
                             ) : (
                               <div className="w-5 h-5 flex-shrink-0" />
                             )}
-                            {u.level === 1 ? (
-                              <span className="font-bold text-blue-800 text-sm">{u.uraian}</span>
+                            {u.level === 1 || u.level === 2 ? (
+                              <div className="font-bold cursor-pointer hover:text-blue-600 transition-colors" onClick={() => !dbHasChildren && setExpandedRow(prev => prev === u.kode ? null : u.kode)}>
+                                <span className={`${u.level === 1 ? 'text-blue-800' : 'text-gray-800'} text-sm`}>{u.uraian}</span>
+                              </div>
                             ) : (
                               <div>
                                 <div className="font-bold text-gray-800 hover:text-blue-600 cursor-pointer transition-colors" onClick={() => !dbHasChildren && setExpandedRow(prev => prev === u.kode ? null : u.kode)}>
                                   {u.uraian}
                                 </div>
                                 <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
-                                  <span className="font-semibold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded w-fit text-[10px] mb-1">
-                                    Pelaksanaan {u.uraian}
-                                  </span>
                                   <span className="font-semibold text-gray-600">
                                     PJ: {existingSub?.penanggungJawab || 'Belum ada PJ'} &bull; Bidang: {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
                                   </span>
@@ -421,7 +420,7 @@ export function AgendaSubKegiatan() {
                             )}
                           </div>
                         </td>
-                        {u.level === 1 ? (
+                        {u.level === 1 || u.level === 2 ? (
                           <>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>

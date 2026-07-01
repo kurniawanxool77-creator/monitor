@@ -3,8 +3,8 @@ import { uraianAnggaran, subKegiatanList, sumberDanaList as mockSumberDana, angg
 import { generateComplexDummyData } from '../lib/dummyGenerator';
 import { api, sumberDanaApi, userApi, API_URL } from '../lib/api';
 // Key for local storage
-const STORAGE_KEY = 'master_uraian_anggaran_v6';
-const KEGIATAN_META_KEY = 'kegiatan_metadata_v5';
+const STORAGE_KEY = 'master_uraian_anggaran_v8';
+const KEGIATAN_META_KEY = 'kegiatan_metadata_v7';
 
 export const AppDataContext = createContext(null);
 
@@ -68,15 +68,16 @@ export function AppDataProvider({ children }) {
         console.error("Failed to parse local storage", e);
       }
     } else {
-      // Initialize with completely empty data
-      setAllDataUraian([]);
-      setSubKegiatanMeta([]);
-      setSumberDanaList([]);
-      setAnggotaList([]);
-      setPaguSumberDana({});
-      setPaguBidangSumberDana({});
+      // Generate complex dummy data if no local storage found
+      const dummy = generateComplexDummyData();
+      setAllDataUraian(dummy.uraianAnggaran);
+      setSubKegiatanMeta(dummy.subKegiatanMeta);
+      setSumberDanaList(dummy.sumberDanaList);
+      setAnggotaList(dummy.anggotaList);
+      setPaguSumberDana(dummy.paguSumberDana);
+      setPaguBidangSumberDana(dummy.paguBidangSumberDana);
       setAllActivityLogs([
-        { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data kosong' }
+        { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data dummy tergenerate (3 level)' }
       ]);
     }
 
