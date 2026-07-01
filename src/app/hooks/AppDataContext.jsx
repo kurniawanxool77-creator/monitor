@@ -154,6 +154,7 @@ export function AppDataProvider({ children }) {
 
       if (u.level === 1 || isWadah) {
         u.realisasi = 0;
+        u.target = 0;
       }
     });
 
@@ -165,6 +166,7 @@ export function AppDataProvider({ children }) {
         const parent = computed.find(p => p.kode === parentKode);
         if (parent) {
           parent.realisasi += u.realisasi;
+          parent.target += u.target;
         }
       }
     });

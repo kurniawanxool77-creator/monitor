@@ -426,8 +426,24 @@ export function AgendaSubKegiatan() {
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-600 whitespace-nowrap">Rp {u.target ? u.target.toLocaleString('id-ID') : '0'}</td>
                             <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-600 whitespace-nowrap">Rp {u.realisasi ? u.realisasi.toLocaleString('id-ID') : '0'}</td>
-                            <td className="py-3 px-4 text-gray-400 text-sm">-</td>
-                            <td className="py-3 px-4 text-gray-400 text-sm">-</td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2 w-full max-w-[120px] opacity-70">
+                                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                  <div className={`h-1.5 rounded-full transition-all duration-500 ${
+                                    progress >= 75 ? 'bg-emerald-500' :
+                                    progress >= 40 ? 'bg-amber-400' : 'bg-red-500'
+                                    }`} style={{ width: `${progress}%` }} />
+                                </div>
+                                <span className="text-[11px] font-semibold text-gray-600 w-8 text-right">{progress}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`whitespace-nowrap px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider opacity-80 ${status === 'Selesai' ? 'bg-emerald-100 text-emerald-700' :
+                                status === 'Berjalan' ? 'bg-blue-100 text-blue-700' :
+                                  status === 'Terlambat' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-600'
+                                }`}>{status}</span>
+                            </td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                           </>
                         ) : (
