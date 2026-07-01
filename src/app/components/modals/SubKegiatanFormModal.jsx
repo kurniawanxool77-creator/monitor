@@ -426,7 +426,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                     {listKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
                   </select>
                   {mode === 'add' && form.bidangId && (
-                    <button type="button" onClick={() => handleSelectChange('kegiatan', 'NEW')} className="px-3 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
+                    <button type="button" onClick={() => handleSelectChange('kegiatan', 'NEW')} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
                       + Baru
                     </button>
                   )}
@@ -603,11 +603,11 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                     <>
                       <input list="anggota-list" type="text" value={anggota} onChange={(e) => updateAnggota(idx, e.target.value)}
                         placeholder={`Cari / pilih nama anggota ${idx + 1}...`}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                       <button type="button" onClick={() => {
                         setAddingMasterIdx(idx);
                         setNewAnggotaData({ nama: '', jabatan: '' });
-                      }} className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm transition-colors">
+                      }} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
                         + Baru
                       </button>
                       {form.anggota.length > 1 && (
