@@ -339,11 +339,10 @@ export function Dashboard() {
                   {expandedKegiatanId === kg.id && (
                     <div className="p-4 bg-slate-50 border-t border-gray-100 animate-in fade-in slide-in-from-top-2">
                       {/* Progress Timeline */}
-                      <div className="mb-8 px-2">
-                        <div className="overflow-x-auto pb-4 custom-scrollbar">
-                          <div className="flex items-center justify-between relative min-w-[400px] px-4">
-                            <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 rounded-full z-0"></div>
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `calc(${kg.progress}% - 2rem)` }}></div>
+                      <div className="mb-8 px-6">
+                        <div className="flex items-center justify-between relative">
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all" style={{ width: `${kg.progress}%` }}></div>
                           
                           {kg.steps?.map((step, idx) => {
                             const isDone = step.selesai;
@@ -352,13 +351,12 @@ export function Dashboard() {
                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white ${isDone ? 'border-blue-500 text-blue-500' : 'border-gray-200 text-gray-400'}`}>
                                   {isDone ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{idx + 1}</span>}
                                 </div>
-                                <span className={`absolute top-9 text-[10px] whitespace-nowrap font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>
+                                <span className={`absolute top-9 text-[9px] text-center w-max max-w-[60px] leading-tight font-medium ${isDone ? 'text-gray-700' : 'text-gray-400'}`}>
                                   {step.nama}
                                 </span>
                               </div>
                             );
                           })}
-                        </div>
                         </div>
                       </div>
 
