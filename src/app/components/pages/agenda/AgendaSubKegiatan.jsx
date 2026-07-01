@@ -393,20 +393,34 @@ export function AgendaSubKegiatan() {
                         <td className="py-3 px-4 text-xs font-mono text-slate-500 text-center whitespace-nowrap">
                           {u.level === 1 ? '' : ++kegiatanCount}
                         </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2" style={{ paddingLeft: `${(u.level - 1) * 20}px` }}>
+                            {dbHasChildren ? (
+                              <button onClick={() => toggleExpand(u.kode)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 text-slate-500 transition-colors">
+                                {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                              </button>
+                            ) : (
+                              <div className="w-5 h-5 flex-shrink-0" />
+                            )}
+                            {u.level === 1 ? (
+                              <span className="font-bold text-blue-800 text-sm">{u.uraian}</span>
+                            ) : (
+                              <div>
+                                <div className="font-bold text-gray-800 hover:text-blue-600 cursor-pointer transition-colors" onClick={() => !dbHasChildren && setExpandedRow(prev => prev === u.kode ? null : u.kode)}>
+                                  {u.uraian}
+                                </div>
+                                <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
+                                  <span className="font-semibold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded w-fit text-[10px] mb-1">
+                                    {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
+                                  </span>
+                                  <span className="font-semibold text-gray-600">{existingSub?.penanggungJawab || 'Belum ada PJ'}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         {u.level === 1 ? (
                           <>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                {dbHasChildren ? (
-                                  <button onClick={() => toggleExpand(u.kode)} className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 text-slate-500 transition-colors">
-                                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                                  </button>
-                                ) : (
-                                  <div className="w-5 h-5" />
-                                )}
-                                <span className="font-bold text-blue-800 text-sm">{u.uraian}</span>
-                              </div>
-                            </td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-gray-400 text-sm">-</td>
                             <td className="py-3 px-4 text-right text-[13px] font-bold text-slate-600 whitespace-nowrap">Rp {u.target ? u.target.toLocaleString('id-ID') : '0'}</td>
@@ -417,17 +431,6 @@ export function AgendaSubKegiatan() {
                           </>
                         ) : (
                           <>
-                            <td className="py-3 px-4">
-                              <div className="font-bold text-gray-800 hover:text-blue-600 cursor-pointer transition-colors" onClick={() => setExpandedRow(prev => prev === u.kode ? null : u.kode)}>
-                                {u.uraian}
-                              </div>
-                              <div className="text-[11px] mt-1.5 flex flex-col gap-0.5">
-                                <span className="font-semibold text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded w-fit text-[10px] mb-1">
-                                  {activeUraianData.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
-                                </span>
-                                <span className="font-semibold text-gray-600">{existingSub?.penanggungJawab || 'Belum ada PJ'}</span>
-                              </div>
-                            </td>
                             <td className="py-3 px-4">
                               <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded font-bold border border-blue-100 uppercase tracking-wider whitespace-nowrap">
                                 {existingSub?.sumberDana || 'Belum Ditentukan'}
