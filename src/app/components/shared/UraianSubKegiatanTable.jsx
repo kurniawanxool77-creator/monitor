@@ -14,7 +14,10 @@ function formatRp(n, short = false) {
 
 export function UraianSubKegiatanTable({ onOpenPaguModal }) {
   const { dataUraian: uraianAnggaran, updateUraian, addActivityLog, subKegiatanMeta, sumberDanaList, paguSumberDana, paguBidangSumberDana, setPaguBidangSumberDana } = useAppData();
-  const [expandedKode, setExpandedKode] = useState(new Set(['1', '2', '3', '4', '5']));
+  const [expandedKode, setExpandedKode] = useState(() => {
+    const defaultExpanded = uraianAnggaran.filter(u => u.level === 1 || u.level === 2).map(u => u.kode);
+    return new Set(defaultExpanded);
+  });
   const [selectedBidang, setSelectedBidang] = useState(null);
   const [filterSumberDana, setFilterSumberDana] = useState('semua');
 
@@ -471,7 +474,18 @@ export function UraianSubKegiatanTable({ onOpenPaguModal }) {
                             {uraianAnggaran.find(x => x.kode === u.kode.split('.')[0])?.uraian || '-'}
                           </td>
                           <td className="py-3 px-4 font-semibold text-slate-800">
-                            {u.uraian}
+                            <div className="flex items-center gap-2" style={{ paddingLeft: u.level === 3 ? '24px' : '0' }}>
+                              {u.level === 2 && hasChildren ? (
+                                <button onClick={() => toggleExpand(u.kode)} className="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center rounded hover:bg-slate-200 text-slate-500 transition-colors">
+                                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                </button>
+                              ) : (
+                                u.level === 2 ? <span className="w-5 h-5 flex-shrink-0" /> : null
+                              )}
+                              <span className={u.level === 2 ? "font-bold text-slate-800" : "font-normal text-slate-700"}>
+                                {u.uraian}
+                              </span>
+                            </div>
                           </td>
                         </>
                       )}
