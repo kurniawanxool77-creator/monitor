@@ -403,7 +403,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Bidang <span className="text-red-500">*</span></label>
               <select value={form.bidangId} onChange={(e) => handleBidangChange(e.target.value)} disabled={mode === 'edit'}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="">Pilih Bidang</option>
                 {listBidang.map((b) => <option key={b.kode} value={b.kode}>{b.uraian}</option>)}
               </select>
@@ -421,7 +421,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               ) : (
                 <div className="flex gap-2">
                   <select value={form.kegiatanId} onChange={(e) => handleSelectChange('kegiatan', e.target.value)} disabled={mode === 'edit' || !form.bidangId}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
                     <option value="">Pilih Kegiatan</option>
                     {listKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
                   </select>
@@ -460,7 +460,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                         onChange={(e) => updateStepName(idx, e.target.value)}
                         readOnly={isLast}
                         placeholder={isLast ? 'Verifikasi Dokumen' : `Nama tahap ${idx + 1}...`}
-                        className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isLast ? 'border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default' : 'border-gray-300'}`}
+                        className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isLast ? 'border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default' : 'border-gray-300'}`}
                       />
                       {!isLast && form.customSteps.length > 2 && (
                         <button type="button" onClick={() => removeStepRow(idx)}
@@ -480,13 +480,13 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Mulai <span className="text-red-500">*</span></label>
               <input type="date" value={form.tanggalMulai}
                 onChange={(e) => setForm((f) => ({ ...f, tanggalMulai: e.target.value }))}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Selesai <span className="text-red-500">*</span></label>
               <input type="date" value={form.tanggalSelesai}
                 onChange={(e) => setForm((f) => ({ ...f, tanggalSelesai: e.target.value }))}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
           </div>
 
@@ -508,7 +508,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sumber Dana <span className="text-red-500">*</span></label>
               <select value={form.sumberDana}
                 onChange={(e) => setForm((f) => ({ ...f, sumberDana: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
                 <option value="">Pilih Sumber Dana</option>
                 {sumberDanaList.map((s) => <option key={s.id || s.nama} value={s.nama}>{s.nama}</option>)}
               </select>
@@ -522,7 +522,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                   onChange={(e) => setForm((f) => ({ ...f, anggaranSubKegiatan: e.target.value.replace(/\D/g, '') }))}
                   placeholder={currentPagu <= 0 ? "Pagu habis" : "Nominal anggaran"}
                   disabled={currentPagu <= 0}
-                  className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${currentPagu <= 0 ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500' : 'bg-white border-gray-300'}`} />
+                  className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${currentPagu <= 0 ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500' : 'bg-white border-gray-300'}`} />
               </div>
             </div>
 
@@ -533,7 +533,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 <input type="text" value={form.realisasi ? Number(form.realisasi).toLocaleString('id-ID') : ''}
                   onChange={(e) => setForm((f) => ({ ...f, realisasi: e.target.value.replace(/\D/g, '') }))}
                   placeholder="Nominal realisasi"
-                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
           </div>
@@ -545,7 +545,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 <>
                   <input list="anggota-list" value={form.penanggungJawab} onChange={(e) => setForm(f => ({ ...f, penanggungJawab: e.target.value }))}
                     placeholder="Cari / pilih penanggung jawab..."
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   <button type="button" onClick={() => setIsAddingMasterPj(true)} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
                     + Baru
                   </button>
@@ -603,7 +603,7 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                     <>
                       <input list="anggota-list" type="text" value={anggota} onChange={(e) => updateAnggota(idx, e.target.value)}
                         placeholder={`Cari / pilih nama anggota ${idx + 1}...`}
-                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                       <button type="button" onClick={() => {
                         setAddingMasterIdx(idx);
                         setNewAnggotaData({ nama: '', jabatan: '' });
