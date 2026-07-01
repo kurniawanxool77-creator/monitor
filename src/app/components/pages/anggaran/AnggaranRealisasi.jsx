@@ -222,9 +222,6 @@ export function AnggaranRealisasi() {
               </div>
             </div>
             <div className="text-[11px] text-gray-400 font-medium">{c.detail}</div>
-            <div className="mt-3 text-[10px] text-blue-500 font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-               Klik untuk melihat distribusi
-            </div>
           </div>
         ))}
       </div>
