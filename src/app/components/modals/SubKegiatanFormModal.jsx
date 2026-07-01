@@ -433,6 +433,33 @@ export function SubKegiatanFormModal({ mode, initialData, onClose }) {
                 </div>
               )}
             </div>
+
+            {form.kegiatanId && (
+              <div className="min-w-0">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sub Kegiatan</label>
+                {newInputMode === 'subKegiatan' ? (
+                  <div className="flex gap-2">
+                    <input autoFocus type="text" value={newInputValue} onChange={(e) => setNewInputValue(e.target.value)}
+                      placeholder="Nama Sub Kegiatan baru..." className="flex-[2] px-3 py-2.5 border border-blue-400 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                    <button onClick={saveNewItem} className="px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Check className="w-4 h-4" /></button>
+                    <button onClick={cancelNewItem} className="px-3 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"><X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select value={form.subKegiatanTemplateId} onChange={(e) => handleSelectChange('subKegiatan', e.target.value)} disabled={mode === 'edit'}
+                      className="flex-1 min-w-0 text-ellipsis overflow-hidden px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50">
+                      <option value="">Pilih Sub Kegiatan (Opsional)</option>
+                      {listSubKegiatan.map((s) => <option key={s.kode} value={s.kode}>{s.uraian}</option>)}
+                    </select>
+                    {mode === 'add' && (
+                      <button type="button" onClick={() => handleSelectChange('subKegiatan', 'NEW')} className="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium text-sm whitespace-nowrap transition-colors">
+                        + Baru
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {!form.isWadah && (

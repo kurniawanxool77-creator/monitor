@@ -45,27 +45,69 @@ export function AppDataProvider({ children }) {
   };
 
   useEffect(() => {
-    // Generate complex dummy data
-    const dummy = generateComplexDummyData();
+    const savedUraian = localStorage.getItem(STORAGE_KEY);
+    const savedMeta = localStorage.getItem(KEGIATAN_META_KEY);
+    const savedSumberDana = localStorage.getItem('master_sumberdana_v2');
+    const savedPagu = localStorage.getItem('pagu_sumberdana_v2');
+    const savedPaguBidang = localStorage.getItem('pagu_bidang_sumberdana_v2');
+    const savedActivityLogs = localStorage.getItem('activity_logs_v2');
 
-    setAllDataUraian(dummy.uraianAnggaran);
-    setSubKegiatanMeta(dummy.subKegiatanMeta);
-    setSumberDanaList(dummy.sumberDanaList);
-    setAnggotaList(dummy.anggotaList);
-    setPaguSumberDana(dummy.paguSumberDana);
-    setPaguBidangSumberDana(dummy.paguBidangSumberDana);
+    if (savedUraian && savedMeta) {
+      try {
+        setAllDataUraian(JSON.parse(savedUraian));
+        setSubKegiatanMeta(JSON.parse(savedMeta));
+        if(savedSumberDana) setSumberDanaList(JSON.parse(savedSumberDana));
+        if(savedPagu) setPaguSumberDana(JSON.parse(savedPagu));
+        if(savedPaguBidang) setPaguBidangSumberDana(JSON.parse(savedPaguBidang));
+        if(savedActivityLogs) setAllActivityLogs(JSON.parse(savedActivityLogs));
+      } catch(e) {
+        console.error("Failed to parse local storage", e);
+      }
+    } else {
+      // Generate complex dummy data if no local storage found
+      const dummy = generateComplexDummyData();
+      setAllDataUraian(dummy.uraianAnggaran);
+      setSubKegiatanMeta(dummy.subKegiatanMeta);
+      setSumberDanaList(dummy.sumberDanaList);
+      setAnggotaList(dummy.anggotaList);
+      setPaguSumberDana(dummy.paguSumberDana);
+      setPaguBidangSumberDana(dummy.paguBidangSumberDana);
+      setAllActivityLogs([
+        { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data dummy tergenerate' }
+      ]);
+    }
 
     setAppUsers([
       { id: '1', email: 'admin@dprd.go.id', nama: 'Admin DPRD', role: 'superadmin', aktif: true, bidangKode: 'ALL' },
       { id: '2', email: 'operator@dprd.go.id', nama: 'Operator Umum', role: 'admin', aktif: true, bidangKode: '2' }
     ]);
 
-    setAllActivityLogs([
-      { id: '1', timestamp: new Date().toISOString(), user: 'Admin DPRD', action: 'System Init', details: 'Aplikasi dimuat dengan data dummy tergenerate' }
-    ]);
-
     setIsLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(allDataUraian));
+  }, [allDataUraian, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem(KEGIATAN_META_KEY, JSON.stringify(subKegiatanMeta));
+  }, [subKegiatanMeta, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem('master_sumberdana_v2', JSON.stringify(sumberDanaList));
+  }, [sumberDanaList, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem('pagu_sumberdana_v2', JSON.stringify(paguSumberDana));
+  }, [paguSumberDana, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem('pagu_bidang_sumberdana_v2', JSON.stringify(paguBidangSumberDana));
+  }, [paguBidangSumberDana, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded) localStorage.setItem('activity_logs_v2', JSON.stringify(allActivityLogs));
+  }, [allActivityLogs, isLoaded]);
 
   // local storage no longer used for users and sumberdana
 
